@@ -30,8 +30,10 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
-.env*
+# env files
+.env
+.env.local
+.env.production
 
 # vercel
 .vercel
@@ -39,3 +41,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# reference files (not part of project)
+CLAUDE.md van andere applicatie die ik gemaakt heb.txt
+Description voor claude.txt
+Procesverslag-Verpakkingen-Systeem.docx
+
+# claude
+.claude/

@@ -1,0 +1,123 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id                   String   @id @default(uuid())
+  email                String   @unique
+  firstName            String
+  middleName           String?
+  lastName             String
+  passwordHash         String?
+  roles                String[] @default(["USER"])
+  isActive             Boolean  @default(false)
+  activationToken      String?  @unique
+  activationExpiresAt  DateTime?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  orders               Order[]
+  receivedItems        OrderItem[] @relation("ReceivedBy")
+  reportedReturns      Return[]
+  auditLogs            AuditLog[]
+}
+
+model Supplier {
+  id           String   @id @default(uuid())
+  name         String
+  email        String
+  ccEmails     String[] @default([])
+  articleGroup String
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  products     Product[]
+  orders       Order[]
+}
+
+model Product {
+  id               String   @id @default(uuid())
+  name             String
+  articleCode      String   @unique
+  supplierId       String
+  unitsPerBox      Int?
+  unitsPerPallet   Int?
+  pricePerUnit     Float?
+  csrdRequirements String?
+  pdfUrl           String?
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  supplier         Supplier @relation(fields: [supplierId], references: [id])
+  orderItems       OrderItem[]
+}
+
+model Order {
+  id           String   @id @default(uuid())
+  orderNumber  String   @unique
+  employeeId   String
+  supplierId   String
+  orderDate    DateTime @default(now())
+  status       String   @default("PENDING")
+  notes        String?
+  emailSentAt  DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  employee     User     @relation(fields: [employeeId], references: [id])
+  supplier     Supplier @relation(fields: [supplierId], references: [id])
+  items        OrderItem[]
+}
+
+model OrderItem {
+  id               String   @id @default(uuid())
+  orderId          String
+  productId        String
+  quantity         Int
+  unit             String   @default("PIECE")
+  quantityReceived Int?
+  receivedDate     DateTime?
+  receivedById     String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  order            Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product          Product  @relation(fields: [productId], references: [id])
+  receivedBy       User?    @relation("ReceivedBy", fields: [receivedById], references: [id])
+  returns          Return[]
+}
+
+model Return {
+  id           String   @id @default(uuid())
+  orderItemId  String
+  quantity     Int
+  reason       String
+  location     String
+  reportedById String
+  reportedAt   DateTime @default(now())
+  createdAt    DateTime @default(now())
+
+  orderItem    OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  reportedBy   User      @relation(fields: [reportedById], references: [id])
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  userId     String?
+  action     String
+  entityType String
+  entityId   String?
+  details    String?
+  createdAt  DateTime @default(now())
+
+  user       User?    @relation(fields: [userId], references: [id])
+}
