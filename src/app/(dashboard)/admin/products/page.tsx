@@ -263,7 +263,7 @@ export default function ProductsPage() {
   // ── Submit ---------------------------------------------------------------
 
   async function handleSubmit() {
-    if (!form.name || !form.supplierId) {
+    if (!form.name || !form.articleCode || !form.supplierId) {
       toast.error('Please fill in all required fields')
       return
     }
@@ -271,19 +271,28 @@ export default function ProductsPage() {
     setSubmitting(true)
 
     try {
-      const payload = {
+      const payload: Record<string, unknown> = {
         name: form.name,
-        articleCode: form.articleCode || null,
+        articleCode: form.articleCode,
         supplierId: form.supplierId,
-        productTypeId: form.productTypeId || null,
-        unitsPerBox: form.unitsPerBox ? Number(form.unitsPerBox) : null,
-        unitsPerPallet: form.unitsPerPallet
-          ? Number(form.unitsPerPallet)
-          : null,
-        pricePerUnit: form.pricePerUnit ? Number(form.pricePerUnit) : null,
-        csrdRequirements: form.csrdRequirements || null,
         ...(editingId ? { isActive: form.isActive } : {}),
       }
+
+      // productTypeId: always send (null to clear, string to set)
+      payload.productTypeId = form.productTypeId || null
+
+      // Optional fields: only include when filled in, or null when editing (to allow clearing)
+      if (form.unitsPerBox) payload.unitsPerBox = Number(form.unitsPerBox)
+      else if (editingId) payload.unitsPerBox = null
+
+      if (form.unitsPerPallet) payload.unitsPerPallet = Number(form.unitsPerPallet)
+      else if (editingId) payload.unitsPerPallet = null
+
+      if (form.pricePerUnit) payload.pricePerUnit = Number(form.pricePerUnit)
+      else if (editingId) payload.pricePerUnit = null
+
+      if (form.csrdRequirements) payload.csrdRequirements = form.csrdRequirements
+      else if (editingId) payload.csrdRequirements = null
 
       const url = editingId
         ? `/api/admin/products/${editingId}`
@@ -297,6 +306,13 @@ export default function ProductsPage() {
 
       if (!res.ok) {
         const body = await res.json().catch(() => null)
+        const details = body?.details
+        if (details && typeof details === 'object') {
+          const fields = Object.entries(details)
+            .map(([key, msgs]) => `${key}: ${(msgs as string[]).join(', ')}`)
+            .join('; ')
+          throw new Error(fields)
+        }
         throw new Error(body?.error ?? 'Request failed')
       }
 
