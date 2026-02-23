@@ -62,7 +62,7 @@ export function DemoBanner() {
 
   return (
     <div className="bg-red-50 border-b border-red-200 text-red-700 text-sm font-medium py-1.5 px-4">
-      <div className="flex items-center justify-center gap-4">
+      <div className="relative flex items-center justify-center">
         <span className="font-semibold whitespace-nowrap">TEST ENVIRONMENT</span>
 
         <DropdownMenu>
@@ -70,7 +70,7 @@ export function DemoBanner() {
             <Button
               variant="outline"
               size="sm"
-              className="flex items-center gap-2 bg-red-50 border-red-300 hover:bg-red-100 h-7"
+              className="absolute right-0 flex items-center gap-2 bg-red-50 border-red-300 hover:bg-red-100 h-7"
             >
               <span className="text-xs text-red-700">Mail:</span>
               <Badge
