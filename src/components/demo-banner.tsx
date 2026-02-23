@@ -8,9 +8,10 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Mail, ChevronDown, ExternalLink, Check } from 'lucide-react'
+import { ChevronDown, ExternalLink, Check } from 'lucide-react'
 
 const isTestMode = process.env.NEXT_PUBLIC_TEST_MODE === 'true'
 
@@ -61,66 +62,89 @@ export function DemoBanner() {
 
   return (
     <div className="bg-red-50 border-b border-red-200 text-red-700 text-sm font-medium py-1.5 px-4">
-      <div className="flex items-center justify-between gap-4 max-w-screen-xl mx-auto flex-wrap">
+      <div className="flex items-center justify-center gap-4">
         <span className="font-semibold whitespace-nowrap">TEST ENVIRONMENT</span>
 
-        <div className="flex items-center gap-3 flex-wrap">
-          <div className="flex items-center gap-1.5">
-            <Mail className="h-3.5 w-3.5" />
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="inline-flex items-center gap-1 hover:underline cursor-pointer">
-                  <Badge variant="outline" className="bg-white text-red-700 border-red-300 text-xs">
-                    {emailProvider === 'resend' ? 'Real mail' : 'Test inbox'}
-                  </Badge>
-                  <ChevronDown className="h-3 w-3" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => handleProviderChange('ethereal')}>
-                  <span className="flex-1">Test inbox (Ethereal)</span>
-                  <a
-                    href="https://ethereal.email/login"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={(e) => e.stopPropagation()}
-                    className="ml-2 text-muted-foreground hover:text-foreground"
-                  >
-                    <ExternalLink className="h-3.5 w-3.5" />
-                  </a>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleProviderChange('resend')}>
-                  Real mail (Resend)
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-
-          <div className="flex items-center gap-1.5">
-            <Input
-              type="email"
-              value={demoEmailInput}
-              onChange={(e) => setDemoEmailInput(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleEmailSave()}
-              placeholder="Redirect emails to..."
-              className="h-6 w-52 text-xs bg-white border-red-300 placeholder:text-red-300"
-            />
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
             <Button
-              size="sm"
               variant="outline"
-              onClick={handleEmailSave}
-              className="h-6 px-2 text-xs border-red-300 bg-white text-red-700 hover:bg-red-100"
+              size="sm"
+              className="flex items-center gap-2 bg-red-50 border-red-300 hover:bg-red-100 h-7"
             >
-              {emailSaved ? <Check className="h-3 w-3" /> : 'Save'}
+              <span className="text-xs text-red-700">Mail:</span>
+              <Badge
+                variant="outline"
+                className={`text-xs ${
+                  emailProvider === 'resend'
+                    ? 'bg-green-100 text-green-700 border-green-300'
+                    : 'bg-muted text-muted-foreground border-border'
+                }`}
+              >
+                {emailProvider === 'resend' ? 'Real mail' : 'Test inbox'}
+              </Badge>
+              <ChevronDown className="h-3 w-3 text-red-700" />
             </Button>
-          </div>
-
-          {demoEmail && (
-            <span className="text-xs text-red-500">
-              Active: {demoEmail}
-            </span>
-          )}
-        </div>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-64">
+            <div className="px-2 py-1.5 text-xs text-muted-foreground font-medium">
+              Email provider
+            </div>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={() => handleProviderChange('ethereal')}
+              className={`cursor-pointer ${emailProvider === 'ethereal' ? 'bg-accent font-medium' : ''}`}
+            >
+              <div className="flex items-center gap-2 w-full">
+                {emailProvider === 'ethereal' ? <Check className="h-4 w-4" /> : <div className="w-4" />}
+                <span className="flex-1">Test inbox (Ethereal)</span>
+                <a
+                  href="https://ethereal.email/login"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  <ExternalLink className="h-3.5 w-3.5" />
+                </a>
+              </div>
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => handleProviderChange('resend')}
+              className={`cursor-pointer ${emailProvider === 'resend' ? 'bg-accent font-medium' : ''}`}
+            >
+              <div className="flex items-center gap-2 w-full">
+                {emailProvider === 'resend' ? <Check className="h-4 w-4" /> : <div className="w-4" />}
+                Real mail (enter address)
+              </div>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <div className="px-2 py-1.5 text-xs text-muted-foreground font-medium">
+              Email recipient
+            </div>
+            <div className="px-2 pb-2">
+              <Input
+                type="email"
+                value={demoEmailInput}
+                onChange={(e) => setDemoEmailInput(e.target.value)}
+                placeholder="Email address..."
+                className="h-8 text-xs"
+                onKeyDown={(e) => e.stopPropagation()}
+              />
+              <Button
+                size="sm"
+                variant="outline"
+                className="w-full mt-1.5 h-7 text-xs"
+                onClick={handleEmailSave}
+              >
+                {emailSaved ? 'Saved!' : 'Save'}
+              </Button>
+              <p className="text-[10px] text-muted-foreground mt-1 truncate">
+                {demoEmail ? `Active: ${demoEmail}` : 'No address set'}
+              </p>
+            </div>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </div>
   )
