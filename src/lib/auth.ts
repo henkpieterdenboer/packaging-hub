@@ -61,7 +61,7 @@ export const authOptions: NextAuthOptions = {
         })
 
         if (!dbUser || !dbUser.isActive) {
-          return {} as any
+          return {} as Record<string, unknown>
         }
 
         token.roles = dbUser.roles

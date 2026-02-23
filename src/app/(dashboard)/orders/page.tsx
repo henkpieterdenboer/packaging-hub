@@ -15,7 +15,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Plus, Eye, ShoppingCart } from 'lucide-react'
-import { OrderStatus, OrderStatusLabels, type OrderStatusType } from '@/types'
+import { OrderStatusLabels, type OrderStatusType } from '@/types'
 
 interface Order {
   id: string

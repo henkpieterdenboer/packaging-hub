@@ -14,7 +14,6 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Package, Search } from 'lucide-react'
-import { UnitLabels, type UnitType } from '@/types'
 
 interface Supplier {
   id: string
