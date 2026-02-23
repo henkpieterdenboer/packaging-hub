@@ -1,7 +1,12 @@
 import nodemailer from 'nodemailer'
 import type { Transporter } from 'nodemailer'
+import { cookies } from 'next/headers'
 
 const APP_URL = process.env.APP_URL || 'http://localhost:3000'
+const DEMO_EMAIL = process.env.DEMO_EMAIL
+const IS_TEST_MODE = process.env.NEXT_PUBLIC_TEST_MODE === 'true'
+
+type EmailProvider = 'ethereal' | 'resend'
 
 interface OrderEmailData {
   orderNumber: string
@@ -28,37 +33,93 @@ interface EmployeeEmailData {
   lastName: string
 }
 
-let cachedTransporter: Transporter | null = null
+let cachedEtherealTransporter: Transporter | null = null
+let cachedResendTransporter: Transporter | null = null
 
-export async function getTransporter(): Promise<Transporter> {
-  if (cachedTransporter) return cachedTransporter
-
-  const isProduction = process.env.NODE_ENV === 'production'
-
-  if (isProduction) {
-    cachedTransporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST || 'smtp.resend.com',
-      port: Number(process.env.SMTP_PORT) || 465,
-      secure: true,
-      auth: {
-        user: process.env.SMTP_USER || 'resend',
-        pass: process.env.SMTP_PASSWORD,
-      },
-    })
-  } else {
-    const testAccount = await nodemailer.createTestAccount()
-    cachedTransporter = nodemailer.createTransport({
-      host: 'smtp.ethereal.email',
-      port: 587,
-      secure: false,
-      auth: {
-        user: testAccount.user,
-        pass: testAccount.pass,
-      },
-    })
+async function getEmailProvider(): Promise<EmailProvider> {
+  if (!IS_TEST_MODE) {
+    return 'resend'
   }
 
-  return cachedTransporter
+  try {
+    const cookieStore = await cookies()
+    const providerCookie = cookieStore.get('email-provider')
+    if (providerCookie?.value === 'resend') {
+      return 'resend'
+    }
+  } catch {
+    // cookies() can fail outside request context
+  }
+
+  return 'ethereal'
+}
+
+async function getDemoEmailTarget(): Promise<string | null> {
+  if (!IS_TEST_MODE) return null
+
+  try {
+    const cookieStore = await cookies()
+    const target = cookieStore.get('demo-email-target')?.value
+    return target || DEMO_EMAIL || null
+  } catch {
+    return DEMO_EMAIL || null
+  }
+}
+
+async function getEtherealTransporter(): Promise<Transporter> {
+  if (cachedEtherealTransporter) return cachedEtherealTransporter
+
+  const testAccount = await nodemailer.createTestAccount()
+  cachedEtherealTransporter = nodemailer.createTransport({
+    host: 'smtp.ethereal.email',
+    port: 587,
+    secure: false,
+    auth: {
+      user: testAccount.user,
+      pass: testAccount.pass,
+    },
+  })
+
+  return cachedEtherealTransporter
+}
+
+function getResendTransporter(): Transporter {
+  if (cachedResendTransporter) return cachedResendTransporter
+
+  cachedResendTransporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST || 'smtp.resend.com',
+    port: Number(process.env.SMTP_PORT) || 465,
+    secure: true,
+    auth: {
+      user: process.env.SMTP_USER || 'resend',
+      pass: process.env.SMTP_PASSWORD,
+    },
+  })
+
+  return cachedResendTransporter
+}
+
+async function getTransporter(): Promise<{ transporter: Transporter; provider: EmailProvider }> {
+  const provider = await getEmailProvider()
+
+  if (provider === 'resend') {
+    return { transporter: getResendTransporter(), provider }
+  }
+
+  return { transporter: await getEtherealTransporter(), provider }
+}
+
+function addDemoBanner(html: string, originalTo: string, provider: EmailProvider, actualTo: string): string {
+  const providerLabel = provider === 'ethereal' ? 'Test inbox (Ethereal)' : 'Real mail (Resend)'
+  const banner = `
+    <div style="background-color: #fee2e2; border: 1px solid #fca5a5; border-radius: 6px; padding: 12px; margin-bottom: 16px; font-size: 13px; color: #991b1b;">
+      <strong>TEST MODE</strong><br/>
+      Original recipient: ${originalTo}<br/>
+      Provider: ${providerLabel}<br/>
+      Actual recipient: ${actualTo}
+    </div>
+  `
+  return banner + html
 }
 
 function getUnitLabel(unit: string): string {
@@ -76,7 +137,8 @@ export async function sendOrderEmail(
   supplier: SupplierEmailData,
   employee: EmployeeEmailData,
 ): Promise<void> {
-  const transporter = await getTransporter()
+  const { transporter, provider } = await getTransporter()
+  const demoTarget = await getDemoEmailTarget()
 
   const itemRows = items
     .map(
@@ -94,7 +156,7 @@ export async function sendOrderEmail(
     ? `<p style="margin-top: 16px;"><strong>Notes:</strong> ${order.notes}</p>`
     : ''
 
-  const html = `
+  let html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
       <h2 style="color: #333;">New Order ${order.orderNumber}</h2>
       <p>Dear ${supplier.name},</p>
@@ -119,17 +181,23 @@ export async function sendOrderEmail(
     </div>
   `
 
-  const ccList = supplier.ccEmails.length > 0 ? supplier.ccEmails : undefined
+  const actualTo = demoTarget || supplier.email
+  const ccList = demoTarget ? undefined : (supplier.ccEmails.length > 0 ? supplier.ccEmails : undefined)
+  const subjectPrefix = IS_TEST_MODE ? '[TEST] ' : ''
+
+  if (IS_TEST_MODE && demoTarget) {
+    html = addDemoBanner(html, supplier.email, provider, actualTo)
+  }
 
   const info = await transporter.sendMail({
     from: process.env.MAIL_FROM || '"Packaging Orders" <orders@example.com>',
-    to: supplier.email,
+    to: actualTo,
     cc: ccList,
-    subject: `New Order ${order.orderNumber} - ${supplier.name}`,
+    subject: `${subjectPrefix}New Order ${order.orderNumber} - ${supplier.name}`,
     html,
   })
 
-  if (process.env.NODE_ENV !== 'production') {
+  if (provider === 'ethereal') {
     console.log(
       '[Email] Ethereal preview URL:',
       nodemailer.getTestMessageUrl(info),
@@ -142,10 +210,11 @@ export async function sendActivationEmail(
   firstName: string,
   token: string,
 ): Promise<void> {
-  const transporter = await getTransporter()
+  const { transporter, provider } = await getTransporter()
+  const demoTarget = await getDemoEmailTarget()
   const activationUrl = `${APP_URL}/activate/${token}`
 
-  const html = `
+  let html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
       <h2 style="color: #333;">Activate Your Account</h2>
       <p>Hello ${firstName},</p>
@@ -163,14 +232,21 @@ export async function sendActivationEmail(
     </div>
   `
 
+  const actualTo = demoTarget || email
+  const subjectPrefix = IS_TEST_MODE ? '[TEST] ' : ''
+
+  if (IS_TEST_MODE && demoTarget) {
+    html = addDemoBanner(html, email, provider, actualTo)
+  }
+
   const info = await transporter.sendMail({
     from: process.env.MAIL_FROM || '"Packaging Orders" <orders@example.com>',
-    to: email,
-    subject: 'Activate Your Account',
+    to: actualTo,
+    subject: `${subjectPrefix}Activate Your Account`,
     html,
   })
 
-  if (process.env.NODE_ENV !== 'production') {
+  if (provider === 'ethereal') {
     console.log(
       '[Email] Ethereal preview URL:',
       nodemailer.getTestMessageUrl(info),
@@ -183,10 +259,11 @@ export async function sendPasswordResetEmail(
   firstName: string,
   token: string,
 ): Promise<void> {
-  const transporter = await getTransporter()
+  const { transporter, provider } = await getTransporter()
+  const demoTarget = await getDemoEmailTarget()
   const resetUrl = `${APP_URL}/reset-password/${token}`
 
-  const html = `
+  let html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
       <h2 style="color: #333;">Reset Your Password</h2>
       <p>Hello ${firstName},</p>
@@ -204,14 +281,21 @@ export async function sendPasswordResetEmail(
     </div>
   `
 
+  const actualTo = demoTarget || email
+  const subjectPrefix = IS_TEST_MODE ? '[TEST] ' : ''
+
+  if (IS_TEST_MODE && demoTarget) {
+    html = addDemoBanner(html, email, provider, actualTo)
+  }
+
   const info = await transporter.sendMail({
     from: process.env.MAIL_FROM || '"Packaging Orders" <orders@example.com>',
-    to: email,
-    subject: 'Reset Your Password',
+    to: actualTo,
+    subject: `${subjectPrefix}Reset Your Password`,
     html,
   })
 
-  if (process.env.NODE_ENV !== 'production') {
+  if (provider === 'ethereal') {
     console.log(
       '[Email] Ethereal preview URL:',
       nodemailer.getTestMessageUrl(info),
