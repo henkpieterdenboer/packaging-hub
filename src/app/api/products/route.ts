@@ -16,15 +16,20 @@ export async function GET(request: Request) {
 
     const { searchParams } = new URL(request.url)
     const supplierId = searchParams.get('supplierId')
+    const productTypeId = searchParams.get('productTypeId')
 
     const products = await prisma.product.findMany({
       where: {
         isActive: true,
         supplier: { isActive: true },
         ...(supplierId ? { supplierId } : {}),
+        ...(productTypeId ? { productTypeId } : {}),
       },
       include: {
         supplier: {
+          select: { id: true, name: true },
+        },
+        productType: {
           select: { id: true, name: true },
         },
       },

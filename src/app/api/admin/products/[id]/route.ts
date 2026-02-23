@@ -69,7 +69,10 @@ export async function PATCH(
     const updatedProduct = await prisma.product.update({
       where: { id },
       data,
-      include: { supplier: { select: { id: true, name: true } } },
+      include: {
+        supplier: { select: { id: true, name: true } },
+        productType: { select: { id: true, name: true } },
+      },
     })
 
     return NextResponse.json(updatedProduct)

@@ -21,11 +21,17 @@ interface Supplier {
   articleGroup: string
 }
 
+interface ProductType {
+  id: string
+  name: string
+}
+
 interface Product {
   id: string
   name: string
   articleCode: string
   supplierId: string
+  productTypeId: string | null
   unitsPerBox: number | null
   unitsPerPallet: number | null
   pricePerUnit: number | null
@@ -33,6 +39,10 @@ interface Product {
     id: string
     name: string
   }
+  productType: {
+    id: string
+    name: string
+  } | null
 }
 
 export default function ProductCatalogPage() {
@@ -41,7 +51,9 @@ export default function ProductCatalogPage() {
 
   const [products, setProducts] = useState<Product[]>([])
   const [suppliers, setSuppliers] = useState<Supplier[]>([])
+  const [productTypes, setProductTypes] = useState<ProductType[]>([])
   const [selectedSupplierId, setSelectedSupplierId] = useState<string>('')
+  const [selectedProductTypeId, setSelectedProductTypeId] = useState<string>('')
   const [searchQuery, setSearchQuery] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -64,8 +76,20 @@ export default function ProductCatalogPage() {
       }
     }
 
+    async function fetchProductTypes() {
+      try {
+        const res = await fetch('/api/product-types')
+        if (!res.ok) throw new Error('Failed to fetch product types')
+        const data = await res.json()
+        setProductTypes(data)
+      } catch (err) {
+        console.error('Failed to fetch product types:', err)
+      }
+    }
+
     if (status === 'authenticated') {
       fetchSuppliers()
+      fetchProductTypes()
     }
   }, [status])
 
@@ -74,9 +98,11 @@ export default function ProductCatalogPage() {
       setLoading(true)
       setError(null)
       try {
-        const url = selectedSupplierId
-          ? `/api/products?supplierId=${selectedSupplierId}`
-          : '/api/products'
+        const params = new URLSearchParams()
+        if (selectedSupplierId) params.set('supplierId', selectedSupplierId)
+        if (selectedProductTypeId) params.set('productTypeId', selectedProductTypeId)
+        const query = params.toString()
+        const url = query ? `/api/products?${query}` : '/api/products'
         const res = await fetch(url)
         if (!res.ok) throw new Error('Failed to fetch products')
         const data = await res.json()
@@ -92,7 +118,7 @@ export default function ProductCatalogPage() {
     if (status === 'authenticated') {
       fetchProducts()
     }
-  }, [status, selectedSupplierId])
+  }, [status, selectedSupplierId, selectedProductTypeId])
 
   const filteredProducts = useMemo(() => {
     if (!searchQuery.trim()) return products
@@ -148,6 +174,30 @@ export default function ProductCatalogPage() {
               {suppliers.map((supplier) => (
                 <SelectItem key={supplier.id} value={supplier.id}>
                   {supplier.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="w-full sm:w-64">
+          <Label htmlFor="type-filter" className="mb-1.5">
+            Product Type
+          </Label>
+          <Select
+            value={selectedProductTypeId}
+            onValueChange={(value) =>
+              setSelectedProductTypeId(value === 'all' ? '' : value)
+            }
+          >
+            <SelectTrigger id="type-filter" className="w-full">
+              <SelectValue placeholder="All types" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All types</SelectItem>
+              {productTypes.map((type) => (
+                <SelectItem key={type.id} value={type.id}>
+                  {type.name}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -220,6 +270,14 @@ export default function ProductCatalogPage() {
                     {product.supplier.name}
                   </span>
                 </div>
+                {product.productType && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Type</span>
+                    <span className="font-medium text-gray-900">
+                      {product.productType.name}
+                    </span>
+                  </div>
+                )}
                 {product.unitsPerBox != null && (
                   <div className="flex justify-between">
                     <span className="text-gray-500">Units / Box</span>

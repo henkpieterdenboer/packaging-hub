@@ -67,12 +67,28 @@ export const updateSupplierSchema = z.object({
 
 export type UpdateSupplierInput = z.infer<typeof updateSupplierSchema>
 
+// ─── Product Types ──────────────────────────────────────────────────────────
+
+export const createProductTypeSchema = z.object({
+  name: z.string().min(1, 'Product type name is required'),
+})
+
+export type CreateProductTypeInput = z.infer<typeof createProductTypeSchema>
+
+export const updateProductTypeSchema = z.object({
+  name: z.string().min(1, 'Product type name is required').optional(),
+  isActive: z.boolean().optional(),
+})
+
+export type UpdateProductTypeInput = z.infer<typeof updateProductTypeSchema>
+
 // ─── Products ────────────────────────────────────────────────────────────────
 
 export const createProductSchema = z.object({
   name: z.string().min(1, 'Product name is required'),
   articleCode: z.string().min(1, 'Article code is required'),
   supplierId: z.string().uuid('Invalid supplier ID'),
+  productTypeId: z.string().uuid('Invalid product type ID').nullable().optional(),
   unitsPerBox: z.number().int().positive().optional(),
   unitsPerPallet: z.number().int().positive().optional(),
   pricePerUnit: z.number().positive().optional(),
@@ -85,6 +101,7 @@ export const updateProductSchema = z.object({
   name: z.string().min(1, 'Product name is required').optional(),
   articleCode: z.string().min(1, 'Article code is required').optional(),
   supplierId: z.string().uuid('Invalid supplier ID').optional(),
+  productTypeId: z.string().uuid('Invalid product type ID').nullable().optional(),
   unitsPerBox: z.number().int().positive().nullable().optional(),
   unitsPerPallet: z.number().int().positive().nullable().optional(),
   pricePerUnit: z.number().positive().nullable().optional(),

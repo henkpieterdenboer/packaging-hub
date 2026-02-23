@@ -43,21 +43,33 @@ model Supplier {
   orders       Order[]
 }
 
+model ProductType {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  products  Product[]
+}
+
 model Product {
-  id               String   @id @default(uuid())
+  id               String       @id @default(uuid())
   name             String
-  articleCode      String   @unique
+  articleCode      String       @unique
   supplierId       String
+  productTypeId    String?
   unitsPerBox      Int?
   unitsPerPallet   Int?
   pricePerUnit     Float?
   csrdRequirements String?
   pdfUrl           String?
-  isActive         Boolean  @default(true)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  isActive         Boolean      @default(true)
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
 
-  supplier         Supplier @relation(fields: [supplierId], references: [id])
+  supplier         Supplier     @relation(fields: [supplierId], references: [id])
+  productType      ProductType? @relation(fields: [productTypeId], references: [id])
   orderItems       OrderItem[]
 }
 

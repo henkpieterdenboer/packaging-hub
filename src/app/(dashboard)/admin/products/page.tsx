@@ -30,7 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Plus, Pencil } from 'lucide-react'
+import { Plus, Pencil, Check, X } from 'lucide-react'
 import { toast } from 'sonner'
 
 // ---------------------------------------------------------------------------
@@ -43,12 +43,20 @@ interface Supplier {
   isActive: boolean
 }
 
+interface ProductType {
+  id: string
+  name: string
+  isActive: boolean
+}
+
 interface Product {
   id: string
   name: string
   articleCode: string | null
   supplierId: string
+  productTypeId: string | null
   supplier: { id: string; name: string }
+  productType: { id: string; name: string } | null
   unitsPerBox: number | null
   unitsPerPallet: number | null
   pricePerUnit: number | null
@@ -61,6 +69,7 @@ interface ProductFormData {
   name: string
   articleCode: string
   supplierId: string
+  productTypeId: string
   unitsPerBox: string
   unitsPerPallet: string
   pricePerUnit: string
@@ -72,6 +81,7 @@ const emptyForm: ProductFormData = {
   name: '',
   articleCode: '',
   supplierId: '',
+  productTypeId: '',
   unitsPerBox: '',
   unitsPerPallet: '',
   pricePerUnit: '',
@@ -86,11 +96,18 @@ const emptyForm: ProductFormData = {
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([])
   const [suppliers, setSuppliers] = useState<Supplier[]>([])
+  const [productTypes, setProductTypes] = useState<ProductType[]>([])
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState<ProductFormData>(emptyForm)
   const [submitting, setSubmitting] = useState(false)
+
+  // Product type inline editing state
+  const [newTypeName, setNewTypeName] = useState('')
+  const [addingType, setAddingType] = useState(false)
+  const [editingTypeId, setEditingTypeId] = useState<string | null>(null)
+  const [editingTypeName, setEditingTypeName] = useState('')
 
   // ── Fetch ----------------------------------------------------------------
 
@@ -119,10 +136,105 @@ export default function ProductsPage() {
     }
   }, [])
 
+  const fetchProductTypes = useCallback(async () => {
+    try {
+      const res = await fetch('/api/admin/product-types')
+      if (!res.ok) throw new Error('Failed to fetch product types')
+      const data: ProductType[] = await res.json()
+      setProductTypes(data)
+    } catch {
+      toast.error('Could not load product types')
+    }
+  }, [])
+
   useEffect(() => {
     fetchProducts()
     fetchSuppliers()
-  }, [fetchProducts, fetchSuppliers])
+    fetchProductTypes()
+  }, [fetchProducts, fetchSuppliers, fetchProductTypes])
+
+  // ── Product Type handlers ------------------------------------------------
+
+  async function handleAddType() {
+    if (!newTypeName.trim()) return
+
+    setAddingType(true)
+    try {
+      const res = await fetch('/api/admin/product-types', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newTypeName.trim() }),
+      })
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => null)
+        throw new Error(body?.error ?? 'Request failed')
+      }
+
+      toast.success('Product type created')
+      setNewTypeName('')
+      fetchProductTypes()
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : 'Something went wrong',
+      )
+    } finally {
+      setAddingType(false)
+    }
+  }
+
+  async function handleUpdateType(id: string) {
+    if (!editingTypeName.trim()) return
+
+    try {
+      const res = await fetch(`/api/admin/product-types/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: editingTypeName.trim() }),
+      })
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => null)
+        throw new Error(body?.error ?? 'Request failed')
+      }
+
+      toast.success('Product type updated')
+      setEditingTypeId(null)
+      fetchProductTypes()
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : 'Something went wrong',
+      )
+    }
+  }
+
+  async function handleToggleType(id: string, currentActive: boolean) {
+    try {
+      const res = await fetch(`/api/admin/product-types/${id}`, {
+        method: currentActive ? 'DELETE' : 'PATCH',
+        ...(currentActive
+          ? {}
+          : {
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ isActive: true }),
+            }),
+      })
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => null)
+        throw new Error(body?.error ?? 'Request failed')
+      }
+
+      toast.success(
+        currentActive ? 'Product type deactivated' : 'Product type activated',
+      )
+      fetchProductTypes()
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : 'Something went wrong',
+      )
+    }
+  }
 
   // ── Dialog helpers -------------------------------------------------------
 
@@ -138,6 +250,7 @@ export default function ProductsPage() {
       name: product.name,
       articleCode: product.articleCode ?? '',
       supplierId: product.supplierId,
+      productTypeId: product.productTypeId ?? '',
       unitsPerBox: product.unitsPerBox?.toString() ?? '',
       unitsPerPallet: product.unitsPerPallet?.toString() ?? '',
       pricePerUnit: product.pricePerUnit?.toString() ?? '',
@@ -162,6 +275,7 @@ export default function ProductsPage() {
         name: form.name,
         articleCode: form.articleCode || null,
         supplierId: form.supplierId,
+        productTypeId: form.productTypeId || null,
         unitsPerBox: form.unitsPerBox ? Number(form.unitsPerBox) : null,
         unitsPerPallet: form.unitsPerPallet
           ? Number(form.unitsPerPallet)
@@ -210,6 +324,8 @@ export default function ProductsPage() {
     return String(value)
   }
 
+  const activeProductTypes = productTypes.filter((t) => t.isActive)
+
   // ── Render ---------------------------------------------------------------
 
   return (
@@ -223,6 +339,124 @@ export default function ProductsPage() {
           Add Product
         </Button>
       </div>
+
+      {/* ── Product Types ─────────────────────────────────────────────── */}
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Product Types</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            {/* Add new type */}
+            <div className="flex items-center gap-2">
+              <Input
+                placeholder="New product type name..."
+                value={newTypeName}
+                onChange={(e) => setNewTypeName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleAddType()
+                }}
+                className="max-w-xs"
+              />
+              <Button
+                size="sm"
+                onClick={handleAddType}
+                disabled={addingType || !newTypeName.trim()}
+              >
+                <Plus className="mr-1 h-4 w-4" />
+                Add
+              </Button>
+            </div>
+
+            {/* Type list */}
+            {productTypes.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No product types yet.
+              </p>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {productTypes.map((type) => (
+                  <div
+                    key={type.id}
+                    className="flex items-center gap-1.5 rounded-md border px-3 py-1.5"
+                  >
+                    {editingTypeId === type.id ? (
+                      <>
+                        <Input
+                          value={editingTypeName}
+                          onChange={(e) => setEditingTypeName(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleUpdateType(type.id)
+                            if (e.key === 'Escape') setEditingTypeId(null)
+                          }}
+                          className="h-7 w-32"
+                          autoFocus
+                        />
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7"
+                          onClick={() => handleUpdateType(type.id)}
+                        >
+                          <Check className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7"
+                          onClick={() => setEditingTypeId(null)}
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <span
+                          className={
+                            type.isActive
+                              ? 'text-sm'
+                              : 'text-sm text-muted-foreground line-through'
+                          }
+                        >
+                          {type.name}
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7"
+                          onClick={() => {
+                            setEditingTypeId(type.id)
+                            setEditingTypeName(type.name)
+                          }}
+                        >
+                          <Pencil className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7"
+                          onClick={() =>
+                            handleToggleType(type.id, type.isActive)
+                          }
+                        >
+                          {type.isActive ? (
+                            <X className="h-3 w-3" />
+                          ) : (
+                            <Check className="h-3 w-3" />
+                          )}
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* ── Products Table ────────────────────────────────────────────── */}
 
       <Card>
         <CardHeader>
@@ -244,6 +478,7 @@ export default function ProductsPage() {
                   <TableHead>Name</TableHead>
                   <TableHead>Article Code</TableHead>
                   <TableHead>Supplier</TableHead>
+                  <TableHead>Type</TableHead>
                   <TableHead className="text-right">Units/Box</TableHead>
                   <TableHead className="text-right">Units/Pallet</TableHead>
                   <TableHead className="text-right">Price/Unit</TableHead>
@@ -261,6 +496,9 @@ export default function ProductsPage() {
                       {displayValue(product.articleCode)}
                     </TableCell>
                     <TableCell>{product.supplier.name}</TableCell>
+                    <TableCell>
+                      {product.productType?.name ?? '-'}
+                    </TableCell>
                     <TableCell className="text-right">
                       {displayValue(product.unitsPerBox)}
                     </TableCell>
@@ -350,6 +588,32 @@ export default function ProductsPage() {
                   {suppliers.map((sup) => (
                     <SelectItem key={sup.id} value={sup.id}>
                       {sup.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Product Type */}
+            <div className="grid gap-2">
+              <Label htmlFor="productTypeId">Product Type</Label>
+              <Select
+                value={form.productTypeId || 'none'}
+                onValueChange={(value: string) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    productTypeId: value === 'none' ? '' : value,
+                  }))
+                }
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select product type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">None</SelectItem>
+                  {activeProductTypes.map((type) => (
+                    <SelectItem key={type.id} value={type.id}>
+                      {type.name}
                     </SelectItem>
                   ))}
                 </SelectContent>

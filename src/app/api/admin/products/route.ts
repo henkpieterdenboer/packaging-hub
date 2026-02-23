@@ -23,7 +23,10 @@ export async function GET() {
     }
 
     const products = await prisma.product.findMany({
-      include: { supplier: { select: { id: true, name: true } } },
+      include: {
+        supplier: { select: { id: true, name: true } },
+        productType: { select: { id: true, name: true } },
+      },
       orderBy: { name: 'asc' },
     })
 
@@ -69,6 +72,7 @@ export async function POST(request: Request) {
       name,
       articleCode,
       supplierId,
+      productTypeId,
       unitsPerBox,
       unitsPerPallet,
       pricePerUnit,
@@ -102,12 +106,16 @@ export async function POST(request: Request) {
         name,
         articleCode,
         supplierId,
+        productTypeId: productTypeId ?? null,
         unitsPerBox: unitsPerBox ?? null,
         unitsPerPallet: unitsPerPallet ?? null,
         pricePerUnit: pricePerUnit ?? null,
         csrdRequirements: csrdRequirements ?? null,
       },
-      include: { supplier: { select: { id: true, name: true } } },
+      include: {
+        supplier: { select: { id: true, name: true } },
+        productType: { select: { id: true, name: true } },
+      },
     })
 
     return NextResponse.json(product, { status: 201 })
