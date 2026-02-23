@@ -61,7 +61,8 @@ export const authOptions: NextAuthOptions = {
         })
 
         if (!dbUser || !dbUser.isActive) {
-          return {} as Record<string, unknown>
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          return {} as any
         }
 
         token.roles = dbUser.roles
