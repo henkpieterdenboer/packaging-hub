@@ -158,12 +158,21 @@ export default function EmployeesPage() {
         body: JSON.stringify(payload),
       })
 
+      const body = await res.json().catch(() => null)
+
       if (!res.ok) {
-        const body = await res.json().catch(() => null)
         throw new Error(body?.error ?? 'Request failed')
       }
 
-      toast.success(editingId ? 'Employee updated' : 'Employee created')
+      toast.success(editingId ? 'Employee updated' : 'Employee created', {
+        duration: body?.etherealUrl ? 15000 : 4000,
+        action: body?.etherealUrl
+          ? {
+              label: 'View email',
+              onClick: () => window.open(body.etherealUrl, '_blank'),
+            }
+          : undefined,
+      })
       setDialogOpen(false)
       fetchEmployees()
     } catch (err) {

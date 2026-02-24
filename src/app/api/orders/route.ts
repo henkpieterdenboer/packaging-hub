@@ -134,8 +134,9 @@ export async function POST(request: Request) {
     })
 
     // Send order email
+    let etherealUrl: string | undefined
     try {
-      await sendOrderEmail(
+      const emailResult = await sendOrderEmail(
         { orderNumber: order.orderNumber, notes: order.notes },
         order.items.map((item) => ({
           quantity: item.quantity,
@@ -155,6 +156,7 @@ export async function POST(request: Request) {
           lastName: order.employee.lastName,
         },
       )
+      etherealUrl = emailResult.etherealUrl
 
       // Update emailSentAt on success
       await prisma.order.update({
@@ -166,7 +168,7 @@ export async function POST(request: Request) {
       // Order is still created, just email failed
     }
 
-    return NextResponse.json(order, { status: 201 })
+    return NextResponse.json({ ...order, etherealUrl }, { status: 201 })
   } catch (error) {
     console.error('[POST /api/orders]', error)
     return NextResponse.json(

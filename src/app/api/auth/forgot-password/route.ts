@@ -17,6 +17,7 @@ export async function POST(request: Request) {
     }
 
     const { email } = parsed.data
+    let etherealUrl: string | undefined
 
     const user = await prisma.user.findUnique({
       where: { email: email.toLowerCase().trim() },
@@ -34,12 +35,14 @@ export async function POST(request: Request) {
         },
       })
 
-      await sendPasswordResetEmail(user.email, user.firstName, token)
+      const emailResult = await sendPasswordResetEmail(user.email, user.firstName, token)
+      etherealUrl = emailResult.etherealUrl
     }
 
     // Always return success to prevent email enumeration
     return NextResponse.json({
       message: 'If an account with that email exists, a password reset link has been sent.',
+      etherealUrl,
     })
   } catch (error) {
     console.error('[ForgotPassword] Error:', error)

@@ -66,18 +66,21 @@ async function getDemoEmailTarget(): Promise<string | null> {
   }
 }
 
-async function getEtherealTransporter(): Promise<Transporter> {
+function getEtherealTransporter(): Transporter {
   if (cachedEtherealTransporter) return cachedEtherealTransporter
 
-  const testAccount = await nodemailer.createTestAccount()
+  const user = process.env.ETHEREAL_USER
+  const pass = process.env.ETHEREAL_PASS
+
+  if (!user || !pass) {
+    throw new Error('ETHEREAL_USER and ETHEREAL_PASS env vars are required for Ethereal email')
+  }
+
   cachedEtherealTransporter = nodemailer.createTransport({
     host: 'smtp.ethereal.email',
     port: 587,
     secure: false,
-    auth: {
-      user: testAccount.user,
-      pass: testAccount.pass,
-    },
+    auth: { user, pass },
   })
 
   return cachedEtherealTransporter
@@ -106,7 +109,7 @@ async function getTransporter(): Promise<{ transporter: Transporter; provider: E
     return { transporter: getResendTransporter(), provider }
   }
 
-  return { transporter: await getEtherealTransporter(), provider }
+  return { transporter: getEtherealTransporter(), provider }
 }
 
 function addDemoBanner(html: string, originalTo: string, provider: EmailProvider, actualTo: string): string {
@@ -136,7 +139,7 @@ export async function sendOrderEmail(
   items: OrderItemEmailData[],
   supplier: SupplierEmailData,
   employee: EmployeeEmailData,
-): Promise<void> {
+): Promise<{ etherealUrl?: string }> {
   const { transporter, provider } = await getTransporter()
   const demoTarget = await getDemoEmailTarget()
 
@@ -198,18 +201,19 @@ export async function sendOrderEmail(
   })
 
   if (provider === 'ethereal') {
-    console.log(
-      '[Email] Ethereal preview URL:',
-      nodemailer.getTestMessageUrl(info),
-    )
+    const url = nodemailer.getTestMessageUrl(info)
+    console.log('[Email] Ethereal preview URL:', url)
+    return { etherealUrl: url || undefined }
   }
+
+  return {}
 }
 
 export async function sendActivationEmail(
   email: string,
   firstName: string,
   token: string,
-): Promise<void> {
+): Promise<{ etherealUrl?: string }> {
   const { transporter, provider } = await getTransporter()
   const demoTarget = await getDemoEmailTarget()
   const activationUrl = `${APP_URL}/activate/${token}`
@@ -247,18 +251,19 @@ export async function sendActivationEmail(
   })
 
   if (provider === 'ethereal') {
-    console.log(
-      '[Email] Ethereal preview URL:',
-      nodemailer.getTestMessageUrl(info),
-    )
+    const url = nodemailer.getTestMessageUrl(info)
+    console.log('[Email] Ethereal preview URL:', url)
+    return { etherealUrl: url || undefined }
   }
+
+  return {}
 }
 
 export async function sendPasswordResetEmail(
   email: string,
   firstName: string,
   token: string,
-): Promise<void> {
+): Promise<{ etherealUrl?: string }> {
   const { transporter, provider } = await getTransporter()
   const demoTarget = await getDemoEmailTarget()
   const resetUrl = `${APP_URL}/reset-password/${token}`
@@ -296,9 +301,10 @@ export async function sendPasswordResetEmail(
   })
 
   if (provider === 'ethereal') {
-    console.log(
-      '[Email] Ethereal preview URL:',
-      nodemailer.getTestMessageUrl(info),
-    )
+    const url = nodemailer.getTestMessageUrl(info)
+    console.log('[Email] Ethereal preview URL:', url)
+    return { etherealUrl: url || undefined }
   }
+
+  return {}
 }

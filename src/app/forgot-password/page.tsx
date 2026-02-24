@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, Mail, Package } from 'lucide-react'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -39,6 +40,15 @@ export default function ForgotPasswordPage() {
         setError(data.error || 'Something went wrong.')
       } else {
         setIsSuccess(true)
+        if (data.etherealUrl) {
+          toast.success('Email sent', {
+            duration: 15000,
+            action: {
+              label: 'View email',
+              onClick: () => window.open(data.etherealUrl, '_blank'),
+            },
+          })
+        }
       }
     } catch {
       setError('An unexpected error occurred. Please try again.')

@@ -2,8 +2,12 @@ import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { redirect } from 'next/navigation'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { ShoppingCart, Clock, Package, Truck } from 'lucide-react'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { ShoppingCart, Clock, Package, Truck, Mail, ExternalLink } from 'lucide-react'
+
+const IS_TEST_MODE = process.env.NEXT_PUBLIC_TEST_MODE === 'true'
+const ETHEREAL_USER = process.env.ETHEREAL_USER
+const ETHEREAL_PASS = process.env.ETHEREAL_PASS
 
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions)
@@ -78,6 +82,47 @@ export default async function DashboardPage() {
           )
         })}
       </div>
+
+      {IS_TEST_MODE && ETHEREAL_USER && (
+        <Card>
+          <CardHeader className="flex flex-row items-center gap-3 pb-2">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100">
+              <Mail className="h-5 w-5 text-blue-600" />
+            </div>
+            <div>
+              <CardTitle className="text-base">Test Email Inbox</CardTitle>
+              <CardDescription>
+                Ethereal captures all test emails. Log in to view sent messages.
+              </CardDescription>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              <div className="grid gap-1 text-sm">
+                <div className="flex items-center gap-2">
+                  <span className="w-20 font-medium text-gray-500">User:</span>
+                  <code className="rounded bg-muted px-2 py-0.5 text-xs">{ETHEREAL_USER}</code>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-20 font-medium text-gray-500">Password:</span>
+                  <code className="rounded bg-muted px-2 py-0.5 text-xs">{ETHEREAL_PASS}</code>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <a
+                  href="https://ethereal.email/login"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                >
+                  Open Inbox
+                  <ExternalLink className="h-3.5 w-3.5" />
+                </a>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }

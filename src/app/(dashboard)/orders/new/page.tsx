@@ -187,12 +187,21 @@ export default function NewOrderPage() {
         }),
       })
 
+      const data = await res.json()
+
       if (!res.ok) {
-        const data = await res.json()
         throw new Error(data.error || 'Failed to place order')
       }
 
-      toast.success('Order placed successfully!')
+      toast.success('Order placed successfully!', {
+        duration: data.etherealUrl ? 15000 : 4000,
+        action: data.etherealUrl
+          ? {
+              label: 'View email',
+              onClick: () => window.open(data.etherealUrl, '_blank'),
+            }
+          : undefined,
+      })
       router.push('/orders')
     } catch (err) {
       const message =

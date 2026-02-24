@@ -19,7 +19,9 @@ export async function GET() {
   const provider = cookieStore.get('email-provider')?.value || 'ethereal'
   const demoEmail = cookieStore.get('demo-email-target')?.value || null
 
-  return NextResponse.json({ provider, demoEmail })
+  const etherealUser = process.env.ETHEREAL_USER || null
+
+  return NextResponse.json({ provider, demoEmail, etherealUser })
 }
 
 export async function POST(request: Request) {

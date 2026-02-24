@@ -115,9 +115,9 @@ export async function POST(request: Request) {
       },
     })
 
-    await sendActivationEmail(user.email, user.firstName, activationToken)
+    const emailResult = await sendActivationEmail(user.email, user.firstName, activationToken)
 
-    return NextResponse.json(user, { status: 201 })
+    return NextResponse.json({ ...user, etherealUrl: emailResult.etherealUrl }, { status: 201 })
   } catch (error) {
     console.error('[POST /api/admin/employees]', error)
     return NextResponse.json(
