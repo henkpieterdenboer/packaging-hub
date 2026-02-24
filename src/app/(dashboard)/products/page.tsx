@@ -32,6 +32,7 @@ import {
   ShoppingCart,
 } from 'lucide-react'
 import Link from 'next/link'
+import { useTranslation } from '@/i18n/use-translation'
 
 interface Supplier {
   id: string
@@ -66,6 +67,9 @@ interface Product {
 export default function ProductCatalogPage() {
   const { status } = useSession()
   const router = useRouter()
+  const { t, language } = useTranslation()
+
+  const localeMap: Record<string, string> = { en: 'en-US', nl: 'nl-NL', pl: 'pl-PL' }
 
   const [products, setProducts] = useState<Product[]>([])
   const [suppliers, setSuppliers] = useState<Supplier[]>([])
@@ -211,10 +215,17 @@ export default function ProductCatalogPage() {
     )
   }
 
+  function formatCurrency(price: number): string {
+    return new Intl.NumberFormat(localeMap[language] || 'en-US', {
+      style: 'currency',
+      currency: 'EUR',
+    }).format(price)
+  }
+
   if (status === 'loading') {
     return (
       <div className="flex items-center justify-center py-12">
-        <p className="text-sm text-gray-500">Loading...</p>
+        <p className="text-sm text-gray-500">{t('common.loading')}</p>
       </div>
     )
   }
@@ -228,10 +239,10 @@ export default function ProductCatalogPage() {
       <div className="flex items-start justify-between">
         <div>
           <h2 className="text-3xl font-bold tracking-tight text-gray-900">
-            Product Catalog
+            {t('products.title')}
           </h2>
           <p className="mt-1 text-sm text-gray-500">
-            Browse available packaging materials from all suppliers.
+            {t('products.subtitle')}
           </p>
         </div>
         <div className="flex items-center gap-1">
@@ -239,7 +250,7 @@ export default function ProductCatalogPage() {
             variant={viewMode === 'grid' ? 'default' : 'outline'}
             size="icon-sm"
             onClick={() => setViewMode('grid')}
-            title="Grid view"
+            title={t('common.gridView')}
           >
             <LayoutGrid className="h-4 w-4" />
           </Button>
@@ -247,7 +258,7 @@ export default function ProductCatalogPage() {
             variant={viewMode === 'list' ? 'default' : 'outline'}
             size="icon-sm"
             onClick={() => setViewMode('list')}
-            title="List view"
+            title={t('common.listView')}
           >
             <List className="h-4 w-4" />
           </Button>
@@ -258,7 +269,7 @@ export default function ProductCatalogPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
         <div className="w-full sm:w-64">
           <Label htmlFor="supplier-filter" className="mb-1.5">
-            Supplier
+            {t('common.supplier')}
           </Label>
           <Select
             value={selectedSupplierId}
@@ -267,10 +278,10 @@ export default function ProductCatalogPage() {
             }
           >
             <SelectTrigger id="supplier-filter" className="w-full">
-              <SelectValue placeholder="All suppliers" />
+              <SelectValue placeholder={t('common.allSuppliers')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All suppliers</SelectItem>
+              <SelectItem value="all">{t('common.allSuppliers')}</SelectItem>
               {suppliers.map((supplier) => (
                 <SelectItem key={supplier.id} value={supplier.id}>
                   {supplier.name}
@@ -282,7 +293,7 @@ export default function ProductCatalogPage() {
 
         <div className="w-full sm:w-64">
           <Label htmlFor="type-filter" className="mb-1.5">
-            Product Type
+            {t('common.productType')}
           </Label>
           <Select
             value={selectedProductTypeId}
@@ -291,10 +302,10 @@ export default function ProductCatalogPage() {
             }
           >
             <SelectTrigger id="type-filter" className="w-full">
-              <SelectValue placeholder="All types" />
+              <SelectValue placeholder={t('common.allTypes')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All types</SelectItem>
+              <SelectItem value="all">{t('common.allTypes')}</SelectItem>
               {productTypes.map((type) => (
                 <SelectItem key={type.id} value={type.id}>
                   {type.name}
@@ -306,13 +317,13 @@ export default function ProductCatalogPage() {
 
         <div className="relative w-full sm:w-72">
           <Label htmlFor="search" className="mb-1.5">
-            Search
+            {t('common.search')}
           </Label>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
             <Input
               id="search"
-              placeholder="Search by name or article code..."
+              placeholder={t('products.searchPlaceholder')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9"
@@ -331,14 +342,14 @@ export default function ProductCatalogPage() {
       {/* Loading State */}
       {loading && (
         <div className="flex items-center justify-center py-12">
-          <p className="text-sm text-gray-500">Loading products...</p>
+          <p className="text-sm text-gray-500">{t('products.loadingProducts')}</p>
         </div>
       )}
 
       {/* Sort controls for grid view */}
       {viewMode === 'grid' && !loading && !error && filteredProducts.length > 0 && (
         <div className="flex items-center gap-2">
-          <Label className="text-sm text-gray-500 whitespace-nowrap">Sort by</Label>
+          <Label className="text-sm text-gray-500 whitespace-nowrap">{t('common.sortBy')}</Label>
           <Select
             value={sortField}
             onValueChange={(value) => setSortField(value)}
@@ -347,10 +358,10 @@ export default function ProductCatalogPage() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="name">Name</SelectItem>
-              <SelectItem value="articleCode">Article Code</SelectItem>
-              <SelectItem value="supplier">Supplier</SelectItem>
-              <SelectItem value="pricePerUnit">Price</SelectItem>
+              <SelectItem value="name">{t('products.name')}</SelectItem>
+              <SelectItem value="articleCode">{t('products.articleCode')}</SelectItem>
+              <SelectItem value="supplier">{t('products.supplier')}</SelectItem>
+              <SelectItem value="pricePerUnit">{t('common.price')}</SelectItem>
             </SelectContent>
           </Select>
           <Button
@@ -359,7 +370,7 @@ export default function ProductCatalogPage() {
             onClick={() =>
               setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'))
             }
-            title={sortDirection === 'asc' ? 'Ascending' : 'Descending'}
+            title={sortDirection === 'asc' ? t('common.ascending') : t('common.descending')}
           >
             {sortDirection === 'asc' ? (
               <ArrowUp className="h-4 w-4" />
@@ -375,12 +386,12 @@ export default function ProductCatalogPage() {
         <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-12">
           <Package className="h-12 w-12 text-gray-300" />
           <h3 className="mt-4 text-sm font-medium text-gray-900">
-            No products found
+            {t('products.noProductsFound')}
           </h3>
           <p className="mt-1 text-sm text-gray-500">
             {searchQuery
-              ? 'Try adjusting your search terms.'
-              : 'No active products available.'}
+              ? t('products.noProductsFoundDesc')
+              : t('products.noProducts')}
           </p>
         </div>
       )}
@@ -400,14 +411,14 @@ export default function ProductCatalogPage() {
               </CardHeader>
               <CardContent className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-gray-500">Supplier</span>
+                  <span className="text-gray-500">{t('products.supplier')}</span>
                   <span className="font-medium text-gray-900">
                     {product.supplier.name}
                   </span>
                 </div>
                 {product.productType && (
                   <div className="flex justify-between">
-                    <span className="text-gray-500">Type</span>
+                    <span className="text-gray-500">{t('products.type')}</span>
                     <span className="font-medium text-gray-900">
                       {product.productType.name}
                     </span>
@@ -415,7 +426,7 @@ export default function ProductCatalogPage() {
                 )}
                 {product.unitsPerBox != null && (
                   <div className="flex justify-between">
-                    <span className="text-gray-500">Units / Box</span>
+                    <span className="text-gray-500">{t('products.unitsPerBox')}</span>
                     <span className="font-medium text-gray-900">
                       {product.unitsPerBox}
                     </span>
@@ -423,7 +434,7 @@ export default function ProductCatalogPage() {
                 )}
                 {product.unitsPerPallet != null && (
                   <div className="flex justify-between">
-                    <span className="text-gray-500">Units / Pallet</span>
+                    <span className="text-gray-500">{t('products.unitsPerPallet')}</span>
                     <span className="font-medium text-gray-900">
                       {product.unitsPerPallet}
                     </span>
@@ -431,12 +442,9 @@ export default function ProductCatalogPage() {
                 )}
                 {product.pricePerUnit != null && (
                   <div className="flex justify-between">
-                    <span className="text-gray-500">Price / Unit</span>
+                    <span className="text-gray-500">{t('products.pricePerUnit')}</span>
                     <span className="font-medium text-gray-900">
-                      {new Intl.NumberFormat('en-US', {
-                        style: 'currency',
-                        currency: 'EUR',
-                      }).format(product.pricePerUnit)}
+                      {formatCurrency(product.pricePerUnit)}
                     </span>
                   </div>
                 )}
@@ -444,7 +452,7 @@ export default function ProductCatalogPage() {
                   <Button variant="outline" size="sm" className="w-full" asChild>
                     <Link href={`/orders/new?supplierId=${product.supplierId}&productId=${product.id}`}>
                       <ShoppingCart className="h-3.5 w-3.5" />
-                      Order
+                      {t('products.order')}
                     </Link>
                   </Button>
                 </div>
@@ -464,30 +472,30 @@ export default function ProductCatalogPage() {
                   className="cursor-pointer select-none"
                   onClick={() => handleTableHeaderClick('name')}
                 >
-                  Name{renderSortIcon('name')}
+                  {t('products.name')}{renderSortIcon('name')}
                 </TableHead>
                 <TableHead
                   className="cursor-pointer select-none"
                   onClick={() => handleTableHeaderClick('articleCode')}
                 >
-                  Article Code{renderSortIcon('articleCode')}
+                  {t('products.articleCode')}{renderSortIcon('articleCode')}
                 </TableHead>
                 <TableHead
                   className="cursor-pointer select-none"
                   onClick={() => handleTableHeaderClick('supplier')}
                 >
-                  Supplier{renderSortIcon('supplier')}
+                  {t('products.supplier')}{renderSortIcon('supplier')}
                 </TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Units / Box</TableHead>
-                <TableHead>Units / Pallet</TableHead>
+                <TableHead>{t('products.type')}</TableHead>
+                <TableHead>{t('products.unitsPerBox')}</TableHead>
+                <TableHead>{t('products.unitsPerPallet')}</TableHead>
                 <TableHead
                   className="cursor-pointer select-none"
                   onClick={() => handleTableHeaderClick('pricePerUnit')}
                 >
-                  Price{renderSortIcon('pricePerUnit')}
+                  {t('common.price')}{renderSortIcon('pricePerUnit')}
                 </TableHead>
-                <TableHead className="text-right">Action</TableHead>
+                <TableHead className="text-right">{t('products.action')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -509,17 +517,14 @@ export default function ProductCatalogPage() {
                   </TableCell>
                   <TableCell>
                     {product.pricePerUnit != null
-                      ? new Intl.NumberFormat('en-US', {
-                          style: 'currency',
-                          currency: 'EUR',
-                        }).format(product.pricePerUnit)
+                      ? formatCurrency(product.pricePerUnit)
                       : '-'}
                   </TableCell>
                   <TableCell className="text-right">
                     <Button variant="ghost" size="sm" asChild>
                       <Link href={`/orders/new?supplierId=${product.supplierId}&productId=${product.id}`}>
                         <ShoppingCart className="h-3.5 w-3.5" />
-                        Order
+                        {t('products.order')}
                       </Link>
                     </Button>
                   </TableCell>

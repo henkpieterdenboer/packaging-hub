@@ -82,6 +82,22 @@ export const EmailTypeLabels: Record<EmailTypeType, string> = {
   PASSWORD_RESET: 'Password Reset',
 }
 
+// ─── Language ────────────────────────────────────────────────────────────────
+
+export const Language = {
+  EN: 'en',
+  NL: 'nl',
+  PL: 'pl',
+} as const
+
+export type LanguageType = (typeof Language)[keyof typeof Language]
+
+export const LanguageLabels: Record<LanguageType, string> = {
+  en: 'English',
+  nl: 'Nederlands',
+  pl: 'Polski',
+}
+
 // ─── Audit Actions ───────────────────────────────────────────────────────────
 
 export const AuditAction = {

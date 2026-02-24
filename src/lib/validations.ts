@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { Role, Unit, ArticleGroup } from '@/types'
+import { Role, Unit, ArticleGroup, Language } from '@/types'
 
 // ─── Auth ────────────────────────────────────────────────────────────────────
 
@@ -43,6 +43,7 @@ export type UpdateUserInput = z.infer<typeof updateUserSchema>
 // ─── Suppliers ───────────────────────────────────────────────────────────────
 
 const articleGroupValues = Object.values(ArticleGroup) as [string, ...string[]]
+const languageValues = Object.values(Language) as [string, ...string[]]
 
 export const createSupplierSchema = z.object({
   name: z.string().min(1, 'Supplier name is required'),
@@ -51,6 +52,7 @@ export const createSupplierSchema = z.object({
     .array(z.string().email('Each CC email must be a valid email address'))
     .optional(),
   articleGroup: z.enum(articleGroupValues),
+  language: z.enum(languageValues).optional(),
 })
 
 export type CreateSupplierInput = z.infer<typeof createSupplierSchema>
@@ -62,6 +64,7 @@ export const updateSupplierSchema = z.object({
     .array(z.string().email('Each CC email must be a valid email address'))
     .optional(),
   articleGroup: z.enum(articleGroupValues).optional(),
+  language: z.enum(languageValues).optional(),
   isActive: z.boolean().optional(),
 })
 

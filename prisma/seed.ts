@@ -20,6 +20,7 @@ async function main() {
       passwordHash: adminPassword,
       roles: ['ADMIN', 'USER'],
       isActive: true,
+      preferredLanguage: 'en',
     },
   })
   console.log(`Created admin: ${admin.email}`)
@@ -36,6 +37,7 @@ async function main() {
       passwordHash: employeePassword,
       roles: ['USER'],
       isActive: true,
+      preferredLanguage: 'nl',
     },
   })
   console.log(`Created employee: ${employee.email}`)
@@ -50,6 +52,7 @@ async function main() {
       email: 'orders@packright.nl',
       ccEmails: ['sales@packright.nl'],
       articleGroup: 'PACKAGING',
+      language: 'nl',
     },
   })
 
@@ -61,6 +64,7 @@ async function main() {
       name: 'LabelPro International',
       email: 'info@labelpro.com',
       articleGroup: 'LABELS',
+      language: 'en',
     },
   })
 
@@ -72,6 +76,7 @@ async function main() {
       name: 'TapeMasters GmbH',
       email: 'bestellungen@tapemasters.de',
       articleGroup: 'TAPE',
+      language: 'en',
     },
   })
 
@@ -84,6 +89,7 @@ async function main() {
       email: 'orders@europallets.eu',
       ccEmails: ['logistics@europallets.eu'],
       articleGroup: 'PALLETS',
+      language: 'pl',
     },
   })
 

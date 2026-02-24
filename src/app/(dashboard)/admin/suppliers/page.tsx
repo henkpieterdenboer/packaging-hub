@@ -33,9 +33,12 @@ import { Plus, Pencil } from 'lucide-react'
 import { toast } from 'sonner'
 import {
   ArticleGroup,
-  ArticleGroupLabels,
   ArticleGroupType,
+  Language,
+  LanguageLabels,
+  type LanguageType,
 } from '@/types'
+import { useTranslation } from '@/i18n/use-translation'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -47,6 +50,7 @@ interface Supplier {
   email: string
   ccEmails: string[]
   articleGroup: string
+  language: string
   isActive: boolean
   createdAt: string
   _count?: { products: number }
@@ -57,6 +61,7 @@ interface SupplierFormData {
   email: string
   ccEmails: string
   articleGroup: ArticleGroupType | ''
+  language: LanguageType
   isActive: boolean
 }
 
@@ -65,6 +70,7 @@ const emptyForm: SupplierFormData = {
   email: '',
   ccEmails: '',
   articleGroup: '',
+  language: 'en',
   isActive: true,
 }
 
@@ -73,6 +79,7 @@ const emptyForm: SupplierFormData = {
 // ---------------------------------------------------------------------------
 
 export default function SuppliersPage() {
+  const { t } = useTranslation()
   const [suppliers, setSuppliers] = useState<Supplier[]>([])
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -80,7 +87,7 @@ export default function SuppliersPage() {
   const [form, setForm] = useState<SupplierFormData>(emptyForm)
   const [submitting, setSubmitting] = useState(false)
 
-  // ── Fetch ----------------------------------------------------------------
+  // -- Fetch ----------------------------------------------------------------
 
   const fetchSuppliers = useCallback(async () => {
     try {
@@ -90,17 +97,17 @@ export default function SuppliersPage() {
       const data: Supplier[] = await res.json()
       setSuppliers(data)
     } catch {
-      toast.error('Could not load suppliers')
+      toast.error(t('admin.suppliers.loadError'))
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [t])
 
   useEffect(() => {
     fetchSuppliers()
   }, [fetchSuppliers])
 
-  // ── Dialog helpers -------------------------------------------------------
+  // -- Dialog helpers -------------------------------------------------------
 
   function openCreate() {
     setEditingId(null)
@@ -115,16 +122,17 @@ export default function SuppliersPage() {
       email: sup.email,
       ccEmails: sup.ccEmails.join(', '),
       articleGroup: sup.articleGroup as ArticleGroupType,
+      language: (sup.language || 'en') as LanguageType,
       isActive: sup.isActive,
     })
     setDialogOpen(true)
   }
 
-  // ── Submit ---------------------------------------------------------------
+  // -- Submit ---------------------------------------------------------------
 
   async function handleSubmit() {
     if (!form.name || !form.email || !form.articleGroup) {
-      toast.error('Please fill in all required fields')
+      toast.error(t('admin.suppliers.requiredFields'))
       return
     }
 
@@ -141,6 +149,7 @@ export default function SuppliersPage() {
         email: form.email,
         ccEmails,
         articleGroup: form.articleGroup,
+        language: form.language,
         ...(editingId ? { isActive: form.isActive } : {}),
       }
 
@@ -159,7 +168,7 @@ export default function SuppliersPage() {
         throw new Error(body?.error ?? 'Request failed')
       }
 
-      toast.success(editingId ? 'Supplier updated' : 'Supplier created')
+      toast.success(editingId ? t('admin.suppliers.updated') : t('admin.suppliers.created'))
       setDialogOpen(false)
       fetchSuppliers()
     } catch (err) {
@@ -171,43 +180,43 @@ export default function SuppliersPage() {
     }
   }
 
-  // ── Render ---------------------------------------------------------------
+  // -- Render ---------------------------------------------------------------
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight">
-          Supplier Management
+          {t('admin.suppliers.title')}
         </h1>
         <Button onClick={openCreate}>
           <Plus className="mr-2 h-4 w-4" />
-          Add Supplier
+          {t('admin.suppliers.addSupplier')}
         </Button>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Suppliers</CardTitle>
+          <CardTitle>{t('admin.suppliers.subtitle')}</CardTitle>
         </CardHeader>
         <CardContent>
           {loading ? (
             <p className="py-8 text-center text-muted-foreground">
-              Loading...
+              {t('common.loading')}
             </p>
           ) : suppliers.length === 0 ? (
             <p className="py-8 text-center text-muted-foreground">
-              No suppliers found.
+              {t('admin.suppliers.noSuppliers')}
             </p>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Article Group</TableHead>
-                  <TableHead className="text-right">Products</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="w-[80px]">Actions</TableHead>
+                  <TableHead>{t('admin.suppliers.name')}</TableHead>
+                  <TableHead>{t('admin.suppliers.email')}</TableHead>
+                  <TableHead>{t('admin.suppliers.articleGroup')}</TableHead>
+                  <TableHead className="text-right">{t('admin.suppliers.products')}</TableHead>
+                  <TableHead>{t('admin.suppliers.status')}</TableHead>
+                  <TableHead className="w-[80px]">{t('admin.suppliers.actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -217,9 +226,7 @@ export default function SuppliersPage() {
                     <TableCell>{sup.email}</TableCell>
                     <TableCell>
                       <Badge variant="secondary">
-                        {ArticleGroupLabels[
-                          sup.articleGroup as ArticleGroupType
-                        ] ?? sup.articleGroup}
+                        {t(`labels.articleGroups.${sup.articleGroup}`)}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
@@ -229,7 +236,7 @@ export default function SuppliersPage() {
                       <Badge
                         variant={sup.isActive ? 'default' : 'destructive'}
                       >
-                        {sup.isActive ? 'Active' : 'Inactive'}
+                        {sup.isActive ? t('admin.suppliers.active') : t('admin.suppliers.inactive')}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -249,20 +256,20 @@ export default function SuppliersPage() {
         </CardContent>
       </Card>
 
-      {/* ── Dialog ─────────────────────────────────────────────────────── */}
+      {/* -- Dialog --------------------------------------------------------- */}
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-[480px]">
           <DialogHeader>
             <DialogTitle>
-              {editingId ? 'Edit Supplier' : 'Add Supplier'}
+              {editingId ? t('admin.suppliers.editTitle') : t('admin.suppliers.addTitle')}
             </DialogTitle>
           </DialogHeader>
 
           <div className="grid gap-4 py-4">
             {/* Name */}
             <div className="grid gap-2">
-              <Label htmlFor="name">Name *</Label>
+              <Label htmlFor="name">{t('admin.suppliers.nameLabel')}</Label>
               <Input
                 id="name"
                 value={form.name}
@@ -274,7 +281,7 @@ export default function SuppliersPage() {
 
             {/* Email */}
             <div className="grid gap-2">
-              <Label htmlFor="email">Email *</Label>
+              <Label htmlFor="email">{t('admin.suppliers.emailLabel')}</Label>
               <Input
                 id="email"
                 type="email"
@@ -282,29 +289,29 @@ export default function SuppliersPage() {
                 onChange={(e) =>
                   setForm((prev) => ({ ...prev, email: e.target.value }))
                 }
-                placeholder="supplier@example.com"
+                placeholder={t('admin.suppliers.emailPlaceholder')}
               />
             </div>
 
             {/* CC Emails */}
             <div className="grid gap-2">
-              <Label htmlFor="ccEmails">CC Emails</Label>
+              <Label htmlFor="ccEmails">{t('admin.suppliers.ccEmails')}</Label>
               <Input
                 id="ccEmails"
                 value={form.ccEmails}
                 onChange={(e) =>
                   setForm((prev) => ({ ...prev, ccEmails: e.target.value }))
                 }
-                placeholder="cc1@example.com, cc2@example.com"
+                placeholder={t('admin.suppliers.ccEmailsPlaceholder')}
               />
               <p className="text-xs text-muted-foreground">
-                Separate multiple addresses with commas
+                {t('admin.suppliers.ccEmailsHint')}
               </p>
             </div>
 
             {/* Article Group */}
             <div className="grid gap-2">
-              <Label htmlFor="articleGroup">Article Group *</Label>
+              <Label htmlFor="articleGroup">{t('admin.suppliers.articleGroupLabel')}</Label>
               <Select
                 value={form.articleGroup}
                 onValueChange={(value: string) =>
@@ -315,16 +322,41 @@ export default function SuppliersPage() {
                 }
               >
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select article group" />
+                  <SelectValue placeholder={t('admin.suppliers.articleGroupPlaceholder')} />
                 </SelectTrigger>
                 <SelectContent>
                   {(Object.keys(ArticleGroup) as ArticleGroupType[]).map(
                     (group) => (
                       <SelectItem key={group} value={group}>
-                        {ArticleGroupLabels[group]}
+                        {t(`labels.articleGroups.${group}`)}
                       </SelectItem>
                     ),
                   )}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Communication Language */}
+            <div className="grid gap-2">
+              <Label htmlFor="language">{t('admin.suppliers.languageLabel')}</Label>
+              <Select
+                value={form.language}
+                onValueChange={(value: string) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    language: value as LanguageType,
+                  }))
+                }
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {(Object.values(Language) as LanguageType[]).map((lang) => (
+                    <SelectItem key={lang} value={lang}>
+                      {LanguageLabels[lang]}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -342,7 +374,7 @@ export default function SuppliersPage() {
                     }))
                   }
                 />
-                <Label htmlFor="isActive">Active</Label>
+                <Label htmlFor="isActive">{t('admin.suppliers.activeLabel')}</Label>
               </div>
             )}
           </div>
@@ -353,14 +385,14 @@ export default function SuppliersPage() {
               onClick={() => setDialogOpen(false)}
               disabled={submitting}
             >
-              Cancel
+              {t('admin.suppliers.cancel')}
             </Button>
             <Button onClick={handleSubmit} disabled={submitting}>
               {submitting
-                ? 'Saving...'
+                ? t('admin.suppliers.saving')
                 : editingId
-                  ? 'Update'
-                  : 'Create'}
+                  ? t('admin.suppliers.update')
+                  : t('admin.suppliers.create')}
             </Button>
           </DialogFooter>
         </DialogContent>

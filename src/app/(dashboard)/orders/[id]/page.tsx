@@ -17,12 +17,7 @@ import {
 } from '@/components/ui/table'
 import { Separator } from '@/components/ui/separator'
 import { ArrowLeft } from 'lucide-react'
-import {
-  OrderStatusLabels,
-  UnitLabels,
-  type OrderStatusType,
-  type UnitType,
-} from '@/types'
+import { useTranslation } from '@/i18n/use-translation'
 
 interface OrderDetail {
   id: string
@@ -67,6 +62,9 @@ export default function OrderDetailPage() {
   const { status } = useSession()
   const router = useRouter()
   const params = useParams<{ id: string }>()
+  const { t, language } = useTranslation()
+
+  const localeMap: Record<string, string> = { en: 'en-US', nl: 'nl-NL', pl: 'pl-PL' }
 
   const [order, setOrder] = useState<OrderDetail | null>(null)
   const [loading, setLoading] = useState(true)
@@ -83,18 +81,18 @@ export default function OrderDetailPage() {
       try {
         const res = await fetch(`/api/orders/${params.id}`)
         if (res.status === 404) {
-          setError('Order not found.')
+          setError(t('orderDetail.notFound'))
           return
         }
         if (res.status === 403) {
-          setError('You do not have permission to view this order.')
+          setError(t('orderDetail.noPermission'))
           return
         }
-        if (!res.ok) throw new Error('Failed to fetch order')
+        if (!res.ok) throw new Error(t('orderDetail.fetchError'))
         const data = await res.json()
         setOrder(data)
       } catch (err) {
-        setError('Failed to load order details. Please try again.')
+        setError(t('orderDetail.loadError'))
         console.error('Failed to fetch order:', err)
       } finally {
         setLoading(false)
@@ -104,12 +102,12 @@ export default function OrderDetailPage() {
     if (status === 'authenticated' && params.id) {
       fetchOrder()
     }
-  }, [status, params.id])
+  }, [status, params.id, t])
 
   if (status === 'loading' || loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <p className="text-sm text-gray-500">Loading...</p>
+        <p className="text-sm text-gray-500">{t('common.loading')}</p>
       </div>
     )
   }
@@ -124,7 +122,7 @@ export default function OrderDetailPage() {
         <Button variant="ghost" size="sm" asChild>
           <Link href="/orders">
             <ArrowLeft className="h-4 w-4" />
-            Back to Orders
+            {t('orderDetail.backToOrders')}
           </Link>
         </Button>
         <div className="rounded-md bg-red-50 p-4">
@@ -144,7 +142,7 @@ export default function OrderDetailPage() {
         <Button variant="ghost" size="sm" asChild>
           <Link href="/orders">
             <ArrowLeft className="h-4 w-4" />
-            Back
+            {t('common.back')}
           </Link>
         </Button>
         <div className="flex items-center gap-3">
@@ -156,7 +154,7 @@ export default function OrderDetailPage() {
               statusColors[order.status] ?? 'bg-gray-100 text-gray-800'
             }
           >
-            {OrderStatusLabels[order.status as OrderStatusType] ?? order.status}
+            {t(`labels.orderStatus.${order.status}`)}
           </Badge>
         </div>
       </div>
@@ -164,14 +162,14 @@ export default function OrderDetailPage() {
       {/* Order Info */}
       <Card>
         <CardHeader>
-          <CardTitle>Order Information</CardTitle>
+          <CardTitle>{t('orderDetail.orderInfo')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <span className="text-sm text-gray-500">Order Date</span>
+              <span className="text-sm text-gray-500">{t('orderDetail.orderDate')}</span>
               <p className="font-medium text-gray-900">
-                {new Date(order.orderDate).toLocaleDateString('en-US', {
+                {new Date(order.orderDate).toLocaleDateString(localeMap[language] || 'en-US', {
                   year: 'numeric',
                   month: 'long',
                   day: 'numeric',
@@ -181,20 +179,20 @@ export default function OrderDetailPage() {
               </p>
             </div>
             <div>
-              <span className="text-sm text-gray-500">Supplier</span>
+              <span className="text-sm text-gray-500">{t('orderDetail.supplier')}</span>
               <p className="font-medium text-gray-900">{order.supplier.name}</p>
             </div>
             <div>
-              <span className="text-sm text-gray-500">Ordered by</span>
+              <span className="text-sm text-gray-500">{t('orderDetail.orderedBy')}</span>
               <p className="font-medium text-gray-900">
                 {order.employee.firstName} {order.employee.lastName}
               </p>
             </div>
             {order.emailSentAt && (
               <div>
-                <span className="text-sm text-gray-500">Email sent</span>
+                <span className="text-sm text-gray-500">{t('orderDetail.emailSent')}</span>
                 <p className="font-medium text-gray-900">
-                  {new Date(order.emailSentAt).toLocaleDateString('en-US', {
+                  {new Date(order.emailSentAt).toLocaleDateString(localeMap[language] || 'en-US', {
                     year: 'numeric',
                     month: 'long',
                     day: 'numeric',
@@ -210,7 +208,7 @@ export default function OrderDetailPage() {
             <>
               <Separator className="my-4" />
               <div>
-                <span className="text-sm text-gray-500">Notes</span>
+                <span className="text-sm text-gray-500">{t('orderDetail.notes')}</span>
                 <p className="mt-1 text-sm text-gray-900 whitespace-pre-wrap">
                   {order.notes}
                 </p>
@@ -223,18 +221,18 @@ export default function OrderDetailPage() {
       {/* Order Items */}
       <Card>
         <CardHeader>
-          <CardTitle>Order Items</CardTitle>
+          <CardTitle>{t('orderDetail.orderItems')}</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Product</TableHead>
-                <TableHead>Article Code</TableHead>
-                <TableHead className="text-right">Quantity</TableHead>
-                <TableHead>Unit</TableHead>
-                <TableHead className="text-right">Received</TableHead>
-                <TableHead>Received Date</TableHead>
+                <TableHead>{t('orderDetail.product')}</TableHead>
+                <TableHead>{t('orderDetail.articleCode')}</TableHead>
+                <TableHead className="text-right">{t('orderDetail.quantity')}</TableHead>
+                <TableHead>{t('orderDetail.unit')}</TableHead>
+                <TableHead className="text-right">{t('orderDetail.received')}</TableHead>
+                <TableHead>{t('orderDetail.receivedDate')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -253,7 +251,7 @@ export default function OrderDetailPage() {
                     </TableCell>
                     <TableCell className="text-right">{item.quantity}</TableCell>
                     <TableCell>
-                      {UnitLabels[item.unit as UnitType] ?? item.unit}
+                      {t(`labels.units.${item.unit}`)}
                     </TableCell>
                     <TableCell className="text-right">
                       <span
@@ -270,7 +268,7 @@ export default function OrderDetailPage() {
                     </TableCell>
                     <TableCell className="text-sm text-gray-500">
                       {item.receivedDate
-                        ? new Date(item.receivedDate).toLocaleDateString('en-US', {
+                        ? new Date(item.receivedDate).toLocaleDateString(localeMap[language] || 'en-US', {
                             year: 'numeric',
                             month: 'short',
                             day: 'numeric',

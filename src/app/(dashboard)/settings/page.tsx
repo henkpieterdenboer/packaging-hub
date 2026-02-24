@@ -4,15 +4,24 @@ import { useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { toast } from 'sonner'
 import { Loader2 } from 'lucide-react'
+import { useTranslation } from '@/i18n/use-translation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { RoleLabels, type RoleType } from '@/types'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Language, LanguageLabels, type LanguageType } from '@/types'
 
 export default function SettingsPage() {
   const { data: session } = useSession()
+  const { t, language, setLanguage } = useTranslation()
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmNewPassword, setConfirmNewPassword] = useState('')
@@ -34,19 +43,19 @@ export default function SettingsPage() {
       if (!res.ok) {
         if (data.details) {
           const messages = Object.values(data.details).flat() as string[]
-          toast.error(messages[0] || 'Validation failed')
+          toast.error(messages[0] || t('settings.validationFailed'))
         } else {
-          toast.error(data.error || 'Failed to change password')
+          toast.error(data.error || t('settings.changePasswordFailed'))
         }
         return
       }
 
-      toast.success('Password changed successfully')
+      toast.success(t('settings.passwordChanged'))
       setCurrentPassword('')
       setNewPassword('')
       setConfirmNewPassword('')
     } catch {
-      toast.error('An unexpected error occurred. Please try again.')
+      toast.error(t('settings.unexpectedError'))
     } finally {
       setIsSubmitting(false)
     }
@@ -56,10 +65,10 @@ export default function SettingsPage() {
     <div className="space-y-8">
       <div>
         <h2 className="text-3xl font-bold tracking-tight text-gray-900">
-          Settings
+          {t('settings.title')}
         </h2>
         <p className="mt-1 text-sm text-gray-500">
-          Manage your account settings and change your password.
+          {t('settings.subtitle')}
         </p>
       </div>
 
@@ -67,30 +76,48 @@ export default function SettingsPage() {
         {/* Profile Info */}
         <Card>
           <CardHeader>
-            <CardTitle>Profile Information</CardTitle>
+            <CardTitle>{t('settings.profileInfo')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid gap-1">
-              <Label className="text-sm text-muted-foreground">Name</Label>
+              <Label className="text-sm text-muted-foreground">{t('settings.name')}</Label>
               <p className="text-sm font-medium">
                 {session?.user?.name || '-'}
               </p>
             </div>
             <div className="grid gap-1">
-              <Label className="text-sm text-muted-foreground">Email</Label>
+              <Label className="text-sm text-muted-foreground">{t('settings.email')}</Label>
               <p className="text-sm font-medium">
                 {session?.user?.email || '-'}
               </p>
             </div>
             <div className="grid gap-1">
-              <Label className="text-sm text-muted-foreground">Roles</Label>
+              <Label className="text-sm text-muted-foreground">{t('settings.roles')}</Label>
               <div className="flex gap-2">
                 {session?.user?.roles?.map((role) => (
                   <Badge key={role} variant="secondary">
-                    {RoleLabels[role as RoleType] || role}
+                    {t(`labels.roles.${role}`)}
                   </Badge>
                 ))}
               </div>
+            </div>
+            <div className="grid gap-1">
+              <Label className="text-sm text-muted-foreground">{t('settings.language')}</Label>
+              <Select
+                value={language}
+                onValueChange={(value) => setLanguage(value as LanguageType)}
+              >
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.values(Language).map((lang) => (
+                    <SelectItem key={lang} value={lang}>
+                      {LanguageLabels[lang]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </CardContent>
         </Card>
@@ -98,16 +125,16 @@ export default function SettingsPage() {
         {/* Change Password */}
         <Card>
           <CardHeader>
-            <CardTitle>Change Password</CardTitle>
+            <CardTitle>{t('settings.changePassword')}</CardTitle>
           </CardHeader>
           <form onSubmit={handleChangePassword}>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="currentPassword">Current Password</Label>
+                <Label htmlFor="currentPassword">{t('settings.currentPassword')}</Label>
                 <Input
                   id="currentPassword"
                   type="password"
-                  placeholder="Enter your current password"
+                  placeholder={t('settings.currentPasswordPlaceholder')}
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
                   required
@@ -116,11 +143,11 @@ export default function SettingsPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="newPassword">New Password</Label>
+                <Label htmlFor="newPassword">{t('settings.newPassword')}</Label>
                 <Input
                   id="newPassword"
                   type="password"
-                  placeholder="Enter your new password"
+                  placeholder={t('settings.newPasswordPlaceholder')}
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   required
@@ -130,11 +157,11 @@ export default function SettingsPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="confirmNewPassword">Confirm New Password</Label>
+                <Label htmlFor="confirmNewPassword">{t('settings.confirmNewPassword')}</Label>
                 <Input
                   id="confirmNewPassword"
                   type="password"
-                  placeholder="Confirm your new password"
+                  placeholder={t('settings.confirmNewPasswordPlaceholder')}
                   value={confirmNewPassword}
                   onChange={(e) => setConfirmNewPassword(e.target.value)}
                   required
@@ -146,10 +173,10 @@ export default function SettingsPage() {
                 {isSubmitting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Changing password...
+                    {t('settings.changingPassword')}
                   </>
                 ) : (
-                  'Change Password'
+                  t('settings.changePasswordButton')
                 )}
               </Button>
             </CardContent>

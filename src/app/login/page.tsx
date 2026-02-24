@@ -16,10 +16,13 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import { useTranslation } from '@/i18n/use-translation'
+import { LanguageSwitcher } from '@/i18n/language-switcher'
 
 export default function LoginPage() {
   const router = useRouter()
   const { status } = useSession()
+  const { t } = useTranslation()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -35,7 +38,7 @@ export default function LoginPage() {
   if (status === 'loading') {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <p className="text-muted-foreground">Loading...</p>
+        <p className="text-muted-foreground">{t('common.loading')}</p>
       </div>
     )
   }
@@ -53,12 +56,12 @@ export default function LoginPage() {
       })
 
       if (result?.error) {
-        setError('Invalid email or password.')
+        setError(t('auth.invalidCredentials'))
       } else {
         router.push('/dashboard')
       }
     } catch {
-      setError('An unexpected error occurred. Please try again.')
+      setError(t('auth.unexpectedError'))
     } finally {
       setIsLoading(false)
     }
@@ -67,12 +70,15 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted/40 px-4">
       <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
+        <CardHeader className="relative text-center">
+          <div className="absolute right-4 top-4">
+            <LanguageSwitcher variant="auth" />
+          </div>
           <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-lg bg-primary">
             <Package className="h-6 w-6 text-primary-foreground" />
           </div>
-          <CardTitle className="text-2xl">Packaging Materials System</CardTitle>
-          <CardDescription>Sign in to your account</CardDescription>
+          <CardTitle className="text-2xl">{t('nav.appTitle')}</CardTitle>
+          <CardDescription>{t('auth.signInTitle')}</CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
@@ -82,11 +88,11 @@ export default function LoginPage() {
               </div>
             )}
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t('auth.email')}</Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="you@example.com"
+                placeholder={t('auth.emailPlaceholder')}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -95,11 +101,11 @@ export default function LoginPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">{t('auth.password')}</Label>
               <Input
                 id="password"
                 type="password"
-                placeholder="Enter your password"
+                placeholder={t('auth.passwordPlaceholder')}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -110,26 +116,26 @@ export default function LoginPage() {
           </CardContent>
           <CardFooter className="flex flex-col gap-4">
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? 'Signing in...' : 'Sign in'}
+              {isLoading ? t('auth.signingIn') : t('auth.signIn')}
             </Button>
             <Link
               href="/forgot-password"
               className="text-sm text-muted-foreground hover:text-primary transition-colors"
             >
-              Forgot password?
+              {t('auth.forgotPassword')}
             </Link>
           </CardFooter>
         </form>
         {process.env.NEXT_PUBLIC_TEST_MODE === 'true' && (
           <div className="border-t px-6 py-4">
-            <p className="mb-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">Demo Accounts</p>
+            <p className="mb-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">{t('auth.demoAccounts')}</p>
             <div className="space-y-1.5 text-sm">
               <button
                 type="button"
                 className="flex w-full items-center justify-between rounded-md px-2 py-1.5 hover:bg-muted transition-colors text-left"
                 onClick={() => { setEmail('admin@example.com'); setPassword('admin123') }}
               >
-                <span className="font-medium">Admin</span>
+                <span className="font-medium">{t('auth.demoAdmin')}</span>
                 <span className="text-muted-foreground">admin@example.com</span>
               </button>
               <button
@@ -137,7 +143,7 @@ export default function LoginPage() {
                 className="flex w-full items-center justify-between rounded-md px-2 py-1.5 hover:bg-muted transition-colors text-left"
                 onClick={() => { setEmail('employee@example.com'); setPassword('employee123') }}
               >
-                <span className="font-medium">Employee</span>
+                <span className="font-medium">{t('auth.demoEmployee')}</span>
                 <span className="text-muted-foreground">employee@example.com</span>
               </button>
             </div>

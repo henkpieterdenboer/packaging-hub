@@ -15,9 +15,11 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import { useTranslation } from '@/i18n/use-translation'
 
 export default function ResetPasswordPage() {
   const params = useParams<{ token: string }>()
+  const { t } = useTranslation()
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState('')
@@ -29,12 +31,12 @@ export default function ResetPasswordPage() {
     setError('')
 
     if (password !== confirmPassword) {
-      setError('Passwords do not match.')
+      setError(t('resetPassword.passwordMismatch'))
       return
     }
 
     if (password.length < 8) {
-      setError('Password must be at least 8 characters.')
+      setError(t('resetPassword.passwordTooShort'))
       return
     }
 
@@ -50,12 +52,12 @@ export default function ResetPasswordPage() {
       const data = await res.json()
 
       if (!res.ok) {
-        setError(data.error || 'Failed to reset password.')
+        setError(data.error || t('resetPassword.failed'))
       } else {
         setIsSuccess(true)
       }
     } catch {
-      setError('An unexpected error occurred. Please try again.')
+      setError(t('auth.unexpectedError'))
     } finally {
       setIsLoading(false)
     }
@@ -69,14 +71,14 @@ export default function ResetPasswordPage() {
             <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
               <CheckCircle className="h-6 w-6 text-green-600" />
             </div>
-            <CardTitle className="text-2xl">Password Reset</CardTitle>
+            <CardTitle className="text-2xl">{t('resetPassword.successTitle')}</CardTitle>
             <CardDescription>
-              Your password has been reset successfully. You can now sign in with your new password.
+              {t('resetPassword.successMessage')}
             </CardDescription>
           </CardHeader>
           <CardFooter className="justify-center">
             <Button asChild>
-              <Link href="/login">Go to Sign In</Link>
+              <Link href="/login">{t('resetPassword.goToSignIn')}</Link>
             </Button>
           </CardFooter>
         </Card>
@@ -91,9 +93,9 @@ export default function ResetPasswordPage() {
           <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-lg bg-primary">
             <Package className="h-6 w-6 text-primary-foreground" />
           </div>
-          <CardTitle className="text-2xl">Reset Your Password</CardTitle>
+          <CardTitle className="text-2xl">{t('resetPassword.title')}</CardTitle>
           <CardDescription>
-            Choose a new password for your account.
+            {t('resetPassword.description')}
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
@@ -104,11 +106,11 @@ export default function ResetPasswordPage() {
               </div>
             )}
             <div className="space-y-2">
-              <Label htmlFor="password">New Password</Label>
+              <Label htmlFor="password">{t('resetPassword.newPassword')}</Label>
               <Input
                 id="password"
                 type="password"
-                placeholder="Enter your new password"
+                placeholder={t('resetPassword.newPasswordPlaceholder')}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -117,15 +119,15 @@ export default function ResetPasswordPage() {
                 disabled={isLoading}
               />
               <p className="text-xs text-muted-foreground">
-                At least 8 characters with uppercase, lowercase, and a number.
+                {t('resetPassword.passwordHint')}
               </p>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm New Password</Label>
+              <Label htmlFor="confirmPassword">{t('resetPassword.confirmPassword')}</Label>
               <Input
                 id="confirmPassword"
                 type="password"
-                placeholder="Confirm your new password"
+                placeholder={t('resetPassword.confirmPlaceholder')}
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
@@ -137,7 +139,7 @@ export default function ResetPasswordPage() {
           </CardContent>
           <CardFooter>
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? 'Resetting...' : 'Reset Password'}
+              {isLoading ? t('resetPassword.submitting') : t('resetPassword.submit')}
             </Button>
           </CardFooter>
         </form>

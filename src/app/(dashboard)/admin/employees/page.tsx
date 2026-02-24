@@ -24,7 +24,8 @@ import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Plus, Pencil } from 'lucide-react'
 import { toast } from 'sonner'
-import { Role, RoleLabels, RoleType } from '@/types'
+import { Role, RoleType } from '@/types'
+import { useTranslation } from '@/i18n/use-translation'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -64,6 +65,7 @@ const emptyForm: EmployeeFormData = {
 // ---------------------------------------------------------------------------
 
 export default function EmployeesPage() {
+  const { t } = useTranslation()
   const [employees, setEmployees] = useState<Employee[]>([])
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -71,7 +73,7 @@ export default function EmployeesPage() {
   const [form, setForm] = useState<EmployeeFormData>(emptyForm)
   const [submitting, setSubmitting] = useState(false)
 
-  // ── Fetch ----------------------------------------------------------------
+  // -- Fetch ----------------------------------------------------------------
 
   const fetchEmployees = useCallback(async () => {
     try {
@@ -81,17 +83,17 @@ export default function EmployeesPage() {
       const data: Employee[] = await res.json()
       setEmployees(data)
     } catch {
-      toast.error('Could not load employees')
+      toast.error(t('admin.employees.loadError'))
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [t])
 
   useEffect(() => {
     fetchEmployees()
   }, [fetchEmployees])
 
-  // ── Dialog helpers -------------------------------------------------------
+  // -- Dialog helpers -------------------------------------------------------
 
   function openCreate() {
     setEditingId(null)
@@ -124,15 +126,15 @@ export default function EmployeesPage() {
     })
   }
 
-  // ── Submit ---------------------------------------------------------------
+  // -- Submit ---------------------------------------------------------------
 
   async function handleSubmit() {
     if (!form.email || !form.firstName || !form.lastName) {
-      toast.error('Please fill in all required fields')
+      toast.error(t('admin.employees.requiredFields'))
       return
     }
     if (form.roles.length === 0) {
-      toast.error('Select at least one role')
+      toast.error(t('admin.employees.selectRole'))
       return
     }
 
@@ -164,11 +166,11 @@ export default function EmployeesPage() {
         throw new Error(body?.error ?? 'Request failed')
       }
 
-      toast.success(editingId ? 'Employee updated' : 'Employee created', {
+      toast.success(editingId ? t('admin.employees.updated') : t('admin.employees.created'), {
         duration: body?.etherealUrl ? 15000 : 4000,
         action: body?.etherealUrl
           ? {
-              label: 'View email',
+              label: t('admin.employees.viewEmail'),
               onClick: () => window.open(body.etherealUrl, '_blank'),
             }
           : undefined,
@@ -184,7 +186,7 @@ export default function EmployeesPage() {
     }
   }
 
-  // ── Helpers --------------------------------------------------------------
+  // -- Helpers --------------------------------------------------------------
 
   function fullName(emp: Employee) {
     return [emp.firstName, emp.middleName, emp.lastName]
@@ -192,42 +194,42 @@ export default function EmployeesPage() {
       .join(' ')
   }
 
-  // ── Render ---------------------------------------------------------------
+  // -- Render ---------------------------------------------------------------
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight">
-          Employee Management
+          {t('admin.employees.title')}
         </h1>
         <Button onClick={openCreate}>
           <Plus className="mr-2 h-4 w-4" />
-          Add Employee
+          {t('admin.employees.addEmployee')}
         </Button>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Employees</CardTitle>
+          <CardTitle>{t('admin.employees.subtitle')}</CardTitle>
         </CardHeader>
         <CardContent>
           {loading ? (
             <p className="py-8 text-center text-muted-foreground">
-              Loading...
+              {t('common.loading')}
             </p>
           ) : employees.length === 0 ? (
             <p className="py-8 text-center text-muted-foreground">
-              No employees found.
+              {t('admin.employees.noEmployees')}
             </p>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Roles</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="w-[80px]">Actions</TableHead>
+                  <TableHead>{t('admin.employees.name')}</TableHead>
+                  <TableHead>{t('admin.employees.email')}</TableHead>
+                  <TableHead>{t('admin.employees.roles')}</TableHead>
+                  <TableHead>{t('admin.employees.status')}</TableHead>
+                  <TableHead className="w-[80px]">{t('admin.employees.actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -241,7 +243,7 @@ export default function EmployeesPage() {
                       <div className="flex flex-wrap gap-1">
                         {emp.roles.map((role) => (
                           <Badge key={role} variant="secondary">
-                            {RoleLabels[role as RoleType] ?? role}
+                            {t(`labels.roles.${role}`)}
                           </Badge>
                         ))}
                       </div>
@@ -250,7 +252,7 @@ export default function EmployeesPage() {
                       <Badge
                         variant={emp.isActive ? 'default' : 'destructive'}
                       >
-                        {emp.isActive ? 'Active' : 'Inactive'}
+                        {emp.isActive ? t('admin.employees.active') : t('admin.employees.inactive')}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -270,20 +272,20 @@ export default function EmployeesPage() {
         </CardContent>
       </Card>
 
-      {/* ── Dialog ─────────────────────────────────────────────────────── */}
+      {/* -- Dialog --------------------------------------------------------- */}
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-[480px]">
           <DialogHeader>
             <DialogTitle>
-              {editingId ? 'Edit Employee' : 'Add Employee'}
+              {editingId ? t('admin.employees.editTitle') : t('admin.employees.addTitle')}
             </DialogTitle>
           </DialogHeader>
 
           <div className="grid gap-4 py-4">
             {/* Email */}
             <div className="grid gap-2">
-              <Label htmlFor="email">Email *</Label>
+              <Label htmlFor="email">{t('admin.employees.emailLabel')}</Label>
               <Input
                 id="email"
                 type="email"
@@ -291,13 +293,13 @@ export default function EmployeesPage() {
                 onChange={(e) =>
                   setForm((prev) => ({ ...prev, email: e.target.value }))
                 }
-                placeholder="user@example.com"
+                placeholder={t('admin.employees.emailPlaceholder')}
               />
             </div>
 
             {/* First name */}
             <div className="grid gap-2">
-              <Label htmlFor="firstName">First Name *</Label>
+              <Label htmlFor="firstName">{t('admin.employees.firstName')}</Label>
               <Input
                 id="firstName"
                 value={form.firstName}
@@ -309,7 +311,7 @@ export default function EmployeesPage() {
 
             {/* Middle name */}
             <div className="grid gap-2">
-              <Label htmlFor="middleName">Middle Name</Label>
+              <Label htmlFor="middleName">{t('admin.employees.middleName')}</Label>
               <Input
                 id="middleName"
                 value={form.middleName}
@@ -321,7 +323,7 @@ export default function EmployeesPage() {
 
             {/* Last name */}
             <div className="grid gap-2">
-              <Label htmlFor="lastName">Last Name *</Label>
+              <Label htmlFor="lastName">{t('admin.employees.lastName')}</Label>
               <Input
                 id="lastName"
                 value={form.lastName}
@@ -333,7 +335,7 @@ export default function EmployeesPage() {
 
             {/* Roles */}
             <div className="grid gap-2">
-              <Label>Roles *</Label>
+              <Label>{t('admin.employees.rolesLabel')}</Label>
               <div className="flex gap-4">
                 {(Object.keys(Role) as RoleType[]).map((role) => (
                   <label
@@ -344,7 +346,7 @@ export default function EmployeesPage() {
                       checked={form.roles.includes(role)}
                       onCheckedChange={() => toggleRole(role)}
                     />
-                    {RoleLabels[role]}
+                    {t(`labels.roles.${role}`)}
                   </label>
                 ))}
               </div>
@@ -363,7 +365,7 @@ export default function EmployeesPage() {
                     }))
                   }
                 />
-                <Label htmlFor="isActive">Active</Label>
+                <Label htmlFor="isActive">{t('admin.employees.activeLabel')}</Label>
               </div>
             )}
           </div>
@@ -374,14 +376,14 @@ export default function EmployeesPage() {
               onClick={() => setDialogOpen(false)}
               disabled={submitting}
             >
-              Cancel
+              {t('admin.employees.cancel')}
             </Button>
             <Button onClick={handleSubmit} disabled={submitting}>
               {submitting
-                ? 'Saving...'
+                ? t('admin.employees.saving')
                 : editingId
-                  ? 'Update'
-                  : 'Create'}
+                  ? t('admin.employees.update')
+                  : t('admin.employees.create')}
             </Button>
           </DialogFooter>
         </DialogContent>

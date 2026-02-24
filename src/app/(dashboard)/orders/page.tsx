@@ -15,7 +15,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Plus, Eye, ShoppingCart } from 'lucide-react'
-import { OrderStatusLabels, type OrderStatusType } from '@/types'
+import { useTranslation } from '@/i18n/use-translation'
 
 interface Order {
   id: string
@@ -43,11 +43,13 @@ const statusColors: Record<string, string> = {
 }
 
 export default function OrdersPage() {
+  const { t } = useTranslation()
+
   return (
     <Suspense
       fallback={
         <div className="flex items-center justify-center py-12">
-          <p className="text-sm text-gray-500">Loading...</p>
+          <p className="text-sm text-gray-500">{t('common.loading')}</p>
         </div>
       }
     >
@@ -61,6 +63,9 @@ function OrdersContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const statusFilter = searchParams.get('status')
+  const { t, language } = useTranslation()
+
+  const localeMap: Record<string, string> = { en: 'en-US', nl: 'nl-NL', pl: 'pl-PL' }
 
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
@@ -79,11 +84,11 @@ function OrdersContent() {
           ? `/api/orders?status=${statusFilter}`
           : '/api/orders'
         const res = await fetch(url)
-        if (!res.ok) throw new Error('Failed to fetch orders')
+        if (!res.ok) throw new Error(t('orders.fetchError'))
         const data = await res.json()
         setOrders(data)
       } catch (err) {
-        setError('Failed to load orders. Please try again.')
+        setError(t('orders.loadError'))
         console.error('Failed to fetch orders:', err)
       } finally {
         setLoading(false)
@@ -93,12 +98,12 @@ function OrdersContent() {
     if (status === 'authenticated') {
       fetchOrders()
     }
-  }, [status, statusFilter])
+  }, [status, statusFilter, t])
 
   if (status === 'loading') {
     return (
       <div className="flex items-center justify-center py-12">
-        <p className="text-sm text-gray-500">Loading...</p>
+        <p className="text-sm text-gray-500">{t('common.loading')}</p>
       </div>
     )
   }
@@ -112,16 +117,16 @@ function OrdersContent() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold tracking-tight text-gray-900">
-            Orders
+            {t('orders.title')}
           </h2>
           <p className="mt-1 text-sm text-gray-500">
-            View and manage your packaging material orders.
+            {t('orders.subtitle')}
           </p>
         </div>
         <Button asChild>
           <Link href="/orders/new">
             <Plus className="h-4 w-4" />
-            New Order
+            {t('orders.newOrder')}
           </Link>
         </Button>
       </div>
@@ -136,7 +141,7 @@ function OrdersContent() {
       {/* Loading State */}
       {loading && (
         <div className="flex items-center justify-center py-12">
-          <p className="text-sm text-gray-500">Loading orders...</p>
+          <p className="text-sm text-gray-500">{t('orders.loadingOrders')}</p>
         </div>
       )}
 
@@ -145,15 +150,15 @@ function OrdersContent() {
         <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-12">
           <ShoppingCart className="h-12 w-12 text-gray-300" />
           <h3 className="mt-4 text-sm font-medium text-gray-900">
-            No orders yet
+            {t('orders.noOrders')}
           </h3>
           <p className="mt-1 text-sm text-gray-500">
-            Place your first order to get started.
+            {t('orders.noOrdersDesc')}
           </p>
           <Button className="mt-4" asChild>
             <Link href="/orders/new">
               <Plus className="h-4 w-4" />
-              Place New Order
+              {t('orders.placeNewOrder')}
             </Link>
           </Button>
         </div>
@@ -165,12 +170,12 @@ function OrdersContent() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Order Number</TableHead>
-                <TableHead>Supplier</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Items</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead>{t('orders.orderNumber')}</TableHead>
+                <TableHead>{t('orders.supplier')}</TableHead>
+                <TableHead>{t('orders.date')}</TableHead>
+                <TableHead>{t('orders.status')}</TableHead>
+                <TableHead className="text-right">{t('orders.items')}</TableHead>
+                <TableHead className="text-right">{t('orders.actions')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -185,7 +190,7 @@ function OrdersContent() {
                   </TableCell>
                   <TableCell>{order.supplier.name}</TableCell>
                   <TableCell>
-                    {new Date(order.orderDate).toLocaleDateString('en-US', {
+                    {new Date(order.orderDate).toLocaleDateString(localeMap[language] || 'en-US', {
                       year: 'numeric',
                       month: 'short',
                       day: 'numeric',
@@ -197,8 +202,7 @@ function OrdersContent() {
                         statusColors[order.status] ?? 'bg-gray-100 text-gray-800'
                       }
                     >
-                      {OrderStatusLabels[order.status as OrderStatusType] ??
-                        order.status}
+                      {t(`labels.orderStatus.${order.status}`)}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">
@@ -208,7 +212,7 @@ function OrdersContent() {
                     <Button variant="ghost" size="sm" asChild>
                       <Link href={`/orders/${order.id}`}>
                         <Eye className="h-4 w-4" />
-                        View
+                        {t('orders.view')}
                       </Link>
                     </Button>
                   </TableCell>

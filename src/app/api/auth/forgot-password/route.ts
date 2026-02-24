@@ -35,7 +35,7 @@ export async function POST(request: Request) {
         },
       })
 
-      const emailResult = await sendPasswordResetEmail(user.email, user.firstName, token)
+      const emailResult = await sendPasswordResetEmail(user.email, user.firstName, token, undefined, user.preferredLanguage)
       etherealUrl = emailResult.etherealUrl
     }
 

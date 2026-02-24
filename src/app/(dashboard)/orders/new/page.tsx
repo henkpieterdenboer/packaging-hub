@@ -26,8 +26,9 @@ import {
 import { Separator } from '@/components/ui/separator'
 import { toast } from 'sonner'
 import { Loader2, ShoppingCart, ArrowLeft } from 'lucide-react'
-import { Unit, UnitLabels, type UnitType } from '@/types'
+import { Unit, type UnitType } from '@/types'
 import Link from 'next/link'
+import { useTranslation } from '@/i18n/use-translation'
 
 interface Supplier {
   id: string
@@ -61,6 +62,7 @@ function NewOrderContent() {
   const prefillSupplierId = searchParams.get('supplierId')
   const prefillProductId = searchParams.get('productId')
   const prefilled = useRef(false)
+  const { t } = useTranslation()
 
   const [suppliers, setSuppliers] = useState<Supplier[]>([])
   const [products, setProducts] = useState<Product[]>([])
@@ -93,7 +95,7 @@ function NewOrderContent() {
           }
         }
       } catch (err) {
-        toast.error('Failed to load suppliers')
+        toast.error(t('newOrder.failed'))
         console.error('Failed to fetch suppliers:', err)
       } finally {
         setLoadingSuppliers(false)
@@ -103,7 +105,7 @@ function NewOrderContent() {
     if (status === 'authenticated') {
       fetchSuppliers()
     }
-  }, [status, prefillSupplierId])
+  }, [status, prefillSupplierId, t])
 
   useEffect(() => {
     if (!selectedSupplierId) {
@@ -138,7 +140,7 @@ function NewOrderContent() {
           setOrderLines(new Map())
         }
       } catch (err) {
-        toast.error('Failed to load products')
+        toast.error(t('newOrder.failed'))
         console.error('Failed to fetch products:', err)
       } finally {
         setLoadingProducts(false)
@@ -146,7 +148,7 @@ function NewOrderContent() {
     }
 
     fetchProducts()
-  }, [selectedSupplierId, prefillProductId])
+  }, [selectedSupplierId, prefillProductId, t])
 
   const updateQuantity = useCallback(
     (productId: string, quantity: number) => {
@@ -190,7 +192,7 @@ function NewOrderContent() {
 
   const handleReviewOrder = () => {
     if (selectedItems.length === 0) {
-      toast.error('Please add at least one item to the order')
+      toast.error(t('newOrder.noItemsError'))
       return
     }
     setShowSummary(true)
@@ -218,14 +220,14 @@ function NewOrderContent() {
       const data = await res.json()
 
       if (!res.ok) {
-        throw new Error(data.error || 'Failed to place order')
+        throw new Error(data.error || t('newOrder.failed'))
       }
 
-      toast.success('Order placed successfully!', {
+      toast.success(t('newOrder.success'), {
         duration: data.etherealUrl ? 15000 : 4000,
         action: data.etherealUrl
           ? {
-              label: 'View email',
+              label: t('newOrder.viewEmail'),
               onClick: () => window.open(data.etherealUrl, '_blank'),
             }
           : undefined,
@@ -233,7 +235,7 @@ function NewOrderContent() {
       router.push('/orders')
     } catch (err) {
       const message =
-        err instanceof Error ? err.message : 'Failed to place order'
+        err instanceof Error ? err.message : t('newOrder.failed')
       toast.error(message)
     } finally {
       setSubmitting(false)
@@ -243,7 +245,7 @@ function NewOrderContent() {
   if (status === 'loading') {
     return (
       <div className="flex items-center justify-center py-12">
-        <p className="text-sm text-gray-500">Loading...</p>
+        <p className="text-sm text-gray-500">{t('common.loading')}</p>
       </div>
     )
   }
@@ -265,20 +267,20 @@ function NewOrderContent() {
             onClick={() => setShowSummary(false)}
           >
             <ArrowLeft className="h-4 w-4" />
-            Back
+            {t('common.back')}
           </Button>
           <h2 className="text-3xl font-bold tracking-tight text-gray-900">
-            Order Summary
+            {t('newOrder.orderSummary')}
           </h2>
         </div>
 
         <Card>
           <CardHeader>
-            <CardTitle>Review Your Order</CardTitle>
+            <CardTitle>{t('newOrder.reviewOrder')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <span className="text-sm text-gray-500">Supplier</span>
+              <span className="text-sm text-gray-500">{t('newOrder.supplier')}</span>
               <p className="font-medium text-gray-900">
                 {selectedSupplier?.name}
               </p>
@@ -289,10 +291,10 @@ function NewOrderContent() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Product</TableHead>
-                  <TableHead>Article Code</TableHead>
-                  <TableHead className="text-right">Quantity</TableHead>
-                  <TableHead>Unit</TableHead>
+                  <TableHead>{t('newOrder.product')}</TableHead>
+                  <TableHead>{t('newOrder.articleCode')}</TableHead>
+                  <TableHead className="text-right">{t('newOrder.quantity')}</TableHead>
+                  <TableHead>{t('newOrder.unit')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -312,7 +314,7 @@ function NewOrderContent() {
                         {line.quantity}
                       </TableCell>
                       <TableCell>
-                        {UnitLabels[line.unit]}
+                        {t(`labels.units.${line.unit}`)}
                       </TableCell>
                     </TableRow>
                   )
@@ -324,7 +326,7 @@ function NewOrderContent() {
               <>
                 <Separator />
                 <div>
-                  <span className="text-sm text-gray-500">Notes</span>
+                  <span className="text-sm text-gray-500">{t('orderDetail.notes')}</span>
                   <p className="mt-1 text-sm text-gray-900 whitespace-pre-wrap">
                     {notes}
                   </p>
@@ -340,18 +342,18 @@ function NewOrderContent() {
                 onClick={() => setShowSummary(false)}
                 disabled={submitting}
               >
-                Edit Order
+                {t('newOrder.editOrder')}
               </Button>
               <Button onClick={handleSubmitOrder} disabled={submitting}>
                 {submitting ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    Placing Order...
+                    {t('newOrder.placingOrder')}
                   </>
                 ) : (
                   <>
                     <ShoppingCart className="h-4 w-4" />
-                    Place Order
+                    {t('newOrder.placeOrder')}
                   </>
                 )}
               </Button>
@@ -368,15 +370,15 @@ function NewOrderContent() {
         <Button variant="ghost" size="sm" asChild>
           <Link href="/orders">
             <ArrowLeft className="h-4 w-4" />
-            Back
+            {t('common.back')}
           </Link>
         </Button>
         <div>
           <h2 className="text-3xl font-bold tracking-tight text-gray-900">
-            Place New Order
+            {t('newOrder.title')}
           </h2>
           <p className="mt-1 text-sm text-gray-500">
-            Select a supplier and choose which products to order.
+            {t('newOrder.subtitle')}
           </p>
         </div>
       </div>
@@ -384,22 +386,22 @@ function NewOrderContent() {
       {/* Step 1: Select Supplier */}
       <Card>
         <CardHeader>
-          <CardTitle>Step 1: Select Supplier</CardTitle>
+          <CardTitle>{t('newOrder.step1')}</CardTitle>
         </CardHeader>
         <CardContent>
           {loadingSuppliers ? (
-            <p className="text-sm text-gray-500">Loading suppliers...</p>
+            <p className="text-sm text-gray-500">{t('newOrder.loadingSuppliers')}</p>
           ) : (
             <div className="w-full sm:w-80">
               <Label htmlFor="supplier-select" className="mb-1.5">
-                Supplier
+                {t('newOrder.supplier')}
               </Label>
               <Select
                 value={selectedSupplierId}
                 onValueChange={setSelectedSupplierId}
               >
                 <SelectTrigger id="supplier-select" className="w-full">
-                  <SelectValue placeholder="Choose a supplier..." />
+                  <SelectValue placeholder={t('newOrder.chooseSupplier')} />
                 </SelectTrigger>
                 <SelectContent>
                   {suppliers.map((supplier) => (
@@ -418,23 +420,23 @@ function NewOrderContent() {
       {selectedSupplierId && (
         <Card>
           <CardHeader>
-            <CardTitle>Step 2: Select Products</CardTitle>
+            <CardTitle>{t('newOrder.step2')}</CardTitle>
           </CardHeader>
           <CardContent>
             {loadingProducts ? (
-              <p className="text-sm text-gray-500">Loading products...</p>
+              <p className="text-sm text-gray-500">{t('newOrder.loadingProducts')}</p>
             ) : products.length === 0 ? (
               <p className="text-sm text-gray-500">
-                No active products available for this supplier.
+                {t('newOrder.noProducts')}
               </p>
             ) : (
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Product</TableHead>
-                    <TableHead>Article Code</TableHead>
-                    <TableHead className="w-32">Quantity</TableHead>
-                    <TableHead className="w-36">Unit</TableHead>
+                    <TableHead>{t('newOrder.product')}</TableHead>
+                    <TableHead>{t('newOrder.articleCode')}</TableHead>
+                    <TableHead className="w-32">{t('newOrder.quantity')}</TableHead>
+                    <TableHead className="w-36">{t('newOrder.unit')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -477,7 +479,7 @@ function NewOrderContent() {
                             <SelectContent>
                               {Object.entries(Unit).map(([key, value]) => (
                                 <SelectItem key={key} value={value}>
-                                  {UnitLabels[value as UnitType]}
+                                  {t(`labels.units.${value}`)}
                                 </SelectItem>
                               ))}
                             </SelectContent>
@@ -497,11 +499,11 @@ function NewOrderContent() {
       {selectedSupplierId && products.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Notes (optional)</CardTitle>
+            <CardTitle>{t('newOrder.notes')}</CardTitle>
           </CardHeader>
           <CardContent>
             <Textarea
-              placeholder="Add any additional notes for this order..."
+              placeholder={t('newOrder.notesPlaceholder')}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={3}
@@ -515,17 +517,14 @@ function NewOrderContent() {
         <div className="sticky bottom-4 rounded-lg border bg-white p-4 shadow-lg">
           <div className="flex items-center justify-between">
             <div className="text-sm text-gray-700">
-              <span className="font-semibold">{selectedItems.length}</span>{' '}
-              {selectedItems.length === 1 ? 'product' : 'products'} selected
-              {' | '}
-              <span className="font-semibold">
-                {selectedItems.reduce((sum, line) => sum + line.quantity, 0)}
-              </span>{' '}
-              total items
+              {t('newOrder.selectedSummary', {
+                count: selectedItems.length,
+                total: selectedItems.reduce((sum, line) => sum + line.quantity, 0),
+              })}
             </div>
             <Button onClick={handleReviewOrder}>
               <ShoppingCart className="h-4 w-4" />
-              Review Order
+              {t('newOrder.reviewButton')}
             </Button>
           </div>
         </div>
@@ -535,8 +534,10 @@ function NewOrderContent() {
 }
 
 export default function NewOrderPage() {
+  const { t } = useTranslation()
+
   return (
-    <Suspense fallback={<div className="flex items-center justify-center py-12"><p className="text-sm text-gray-500">Loading...</p></div>}>
+    <Suspense fallback={<div className="flex items-center justify-center py-12"><p className="text-sm text-gray-500">{t('common.loading')}</p></div>}>
       <NewOrderContent />
     </Suspense>
   )

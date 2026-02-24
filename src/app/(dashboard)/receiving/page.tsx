@@ -18,12 +18,8 @@ import { Badge } from '@/components/ui/badge'
 import { Textarea } from '@/components/ui/textarea'
 import { ChevronDown, ChevronRight, PackageCheck, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
-import {
-  OrderStatusLabels,
-  UnitLabels,
-  type OrderStatusType,
-  type UnitType,
-} from '@/types'
+import type { OrderStatusType, UnitType } from '@/types'
+import { useTranslation } from '@/i18n/use-translation'
 
 interface Order {
   id: string
@@ -99,6 +95,9 @@ function getTodayString(): string {
 export default function ReceivingPage() {
   const { status } = useSession()
   const router = useRouter()
+  const { t, language } = useTranslation()
+
+  const localeMap: Record<string, string> = { en: 'en-US', nl: 'nl-NL', pl: 'pl-PL' }
 
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
@@ -165,7 +164,7 @@ export default function ReceivingPage() {
       }
       setFormData((prev) => ({ ...prev, [orderId]: initialForm }))
     } catch (err) {
-      toast.error('Failed to load order details.')
+      toast.error(t('receiving.loadError'))
       console.error('Failed to fetch order detail:', err)
     } finally {
       setLoadingDetails((prev) => ({ ...prev, [orderId]: false }))
@@ -223,10 +222,10 @@ export default function ReceivingPage() {
 
       if (!res.ok) {
         const data = await res.json()
-        throw new Error(data.error || 'Failed to save receiving data')
+        throw new Error(data.error || t('receiving.failed'))
       }
 
-      toast.success(`Receiving data saved for ${detail.orderNumber}`)
+      toast.success(t('receiving.success', { orderNumber: detail.orderNumber }))
 
       // Refresh data
       // Clear cached detail so it reloads
@@ -243,7 +242,7 @@ export default function ReceivingPage() {
       // If the order is still in the list, reload its details
       setExpandedOrderId(null)
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to save receiving data'
+      const message = err instanceof Error ? err.message : t('receiving.failed')
       toast.error(message)
       console.error('Failed to save receiving data:', err)
     } finally {
@@ -254,7 +253,7 @@ export default function ReceivingPage() {
   if (status === 'loading') {
     return (
       <div className="flex items-center justify-center py-12">
-        <p className="text-sm text-gray-500">Loading...</p>
+        <p className="text-sm text-gray-500">{t('common.loading')}</p>
       </div>
     )
   }
@@ -267,10 +266,10 @@ export default function ReceivingPage() {
     <div className="space-y-6">
       <div>
         <h2 className="text-3xl font-bold tracking-tight text-gray-900">
-          Goods Receiving
+          {t('receiving.title')}
         </h2>
         <p className="mt-1 text-sm text-gray-500">
-          Record received quantities for pending orders.
+          {t('receiving.subtitle')}
         </p>
       </div>
 
@@ -284,7 +283,7 @@ export default function ReceivingPage() {
       {/* Loading State */}
       {loading && (
         <div className="flex items-center justify-center py-12">
-          <p className="text-sm text-gray-500">Loading orders...</p>
+          <p className="text-sm text-gray-500">{t('receiving.loadingOrders')}</p>
         </div>
       )}
 
@@ -293,10 +292,10 @@ export default function ReceivingPage() {
         <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-12">
           <PackageCheck className="h-12 w-12 text-gray-300" />
           <h3 className="mt-4 text-sm font-medium text-gray-900">
-            No orders awaiting goods
+            {t('receiving.noOrders')}
           </h3>
           <p className="mt-1 text-sm text-gray-500">
-            All orders have been fully received or there are no pending orders.
+            {t('receiving.noOrdersDesc')}
           </p>
         </div>
       )}
@@ -329,7 +328,7 @@ export default function ReceivingPage() {
                         </CardTitle>
                         <p className="text-sm text-gray-500">
                           {order.supplier.name} &middot;{' '}
-                          {new Date(order.orderDate).toLocaleDateString('en-US', {
+                          {new Date(order.orderDate).toLocaleDateString(localeMap[language] || 'en-US', {
                             year: 'numeric',
                             month: 'short',
                             day: 'numeric',
@@ -343,7 +342,7 @@ export default function ReceivingPage() {
                         statusColors[order.status] ?? 'bg-gray-100 text-gray-800'
                       }
                     >
-                      {OrderStatusLabels[order.status as OrderStatusType] ?? order.status}
+                      {t(`labels.orderStatus.${order.status as OrderStatusType}`)}
                     </Badge>
                   </div>
                 </CardHeader>
@@ -354,7 +353,7 @@ export default function ReceivingPage() {
                       <div className="flex items-center justify-center py-8">
                         <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
                         <span className="ml-2 text-sm text-gray-500">
-                          Loading items...
+                          {t('receiving.loadingItems')}
                         </span>
                       </div>
                     )}
@@ -364,12 +363,12 @@ export default function ReceivingPage() {
                         <Table>
                           <TableHeader>
                             <TableRow>
-                              <TableHead>Product</TableHead>
-                              <TableHead>Article Code</TableHead>
-                              <TableHead className="text-right">Ordered</TableHead>
-                              <TableHead>Unit</TableHead>
-                              <TableHead className="text-right">Received Qty</TableHead>
-                              <TableHead>Date Received</TableHead>
+                              <TableHead>{t('receiving.product')}</TableHead>
+                              <TableHead>{t('receiving.articleCode')}</TableHead>
+                              <TableHead className="text-right">{t('receiving.ordered')}</TableHead>
+                              <TableHead>{t('receiving.unit')}</TableHead>
+                              <TableHead className="text-right">{t('receiving.receivedQty')}</TableHead>
+                              <TableHead>{t('receiving.dateReceived')}</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
@@ -387,7 +386,7 @@ export default function ReceivingPage() {
                                     {item.quantity}
                                   </TableCell>
                                   <TableCell>
-                                    {UnitLabels[item.unit as UnitType] ?? item.unit}
+                                    {t(`labels.units.${item.unit as UnitType}`)}
                                   </TableCell>
                                   <TableCell className="text-right">
                                     <Input
@@ -429,11 +428,11 @@ export default function ReceivingPage() {
 
                         <div>
                           <label className="text-sm font-medium text-gray-700">
-                            Notes (optional)
+                            {t('receiving.notes')}
                           </label>
                           <Textarea
                             className="mt-1"
-                            placeholder="Add notes about this delivery..."
+                            placeholder={t('receiving.notesPlaceholder')}
                             rows={2}
                             value={notes[order.id] ?? ''}
                             onChange={(e) =>
@@ -453,12 +452,12 @@ export default function ReceivingPage() {
                             {isSaving ? (
                               <>
                                 <Loader2 className="h-4 w-4 animate-spin" />
-                                Saving...
+                                {t('receiving.saving')}
                               </>
                             ) : (
                               <>
                                 <PackageCheck className="h-4 w-4" />
-                                Save Received Quantities
+                                {t('receiving.save')}
                               </>
                             )}
                           </Button>

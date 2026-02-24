@@ -8,6 +8,7 @@ declare module 'next-auth' {
       roles: string[]
       firstName: string
       lastName: string
+      preferredLanguage: string
     } & DefaultSession['user']
   }
 
@@ -15,6 +16,7 @@ declare module 'next-auth' {
     roles: string[]
     firstName: string
     lastName: string
+    preferredLanguage: string
   }
 }
 
@@ -24,5 +26,6 @@ declare module 'next-auth/jwt' {
     roles: string[]
     firstName: string
     lastName: string
+    preferredLanguage: string
   }
 }

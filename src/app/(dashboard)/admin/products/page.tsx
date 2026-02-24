@@ -32,6 +32,7 @@ import {
 } from '@/components/ui/select'
 import { Plus, Pencil, Check, X } from 'lucide-react'
 import { toast } from 'sonner'
+import { useTranslation } from '@/i18n/use-translation'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -94,6 +95,7 @@ const emptyForm: ProductFormData = {
 // ---------------------------------------------------------------------------
 
 export default function ProductsPage() {
+  const { t } = useTranslation()
   const [products, setProducts] = useState<Product[]>([])
   const [suppliers, setSuppliers] = useState<Supplier[]>([])
   const [productTypes, setProductTypes] = useState<ProductType[]>([])
@@ -109,7 +111,7 @@ export default function ProductsPage() {
   const [editingTypeId, setEditingTypeId] = useState<string | null>(null)
   const [editingTypeName, setEditingTypeName] = useState('')
 
-  // ── Fetch ----------------------------------------------------------------
+  // -- Fetch ----------------------------------------------------------------
 
   const fetchProducts = useCallback(async () => {
     try {
@@ -119,11 +121,11 @@ export default function ProductsPage() {
       const data: Product[] = await res.json()
       setProducts(data)
     } catch {
-      toast.error('Could not load products')
+      toast.error(t('admin.products.loadError'))
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [t])
 
   const fetchSuppliers = useCallback(async () => {
     try {
@@ -132,9 +134,9 @@ export default function ProductsPage() {
       const data: Supplier[] = await res.json()
       setSuppliers(data.filter((s) => s.isActive))
     } catch {
-      toast.error('Could not load suppliers')
+      toast.error(t('admin.products.loadSuppliersError'))
     }
-  }, [])
+  }, [t])
 
   const fetchProductTypes = useCallback(async () => {
     try {
@@ -143,9 +145,9 @@ export default function ProductsPage() {
       const data: ProductType[] = await res.json()
       setProductTypes(data)
     } catch {
-      toast.error('Could not load product types')
+      toast.error(t('admin.products.loadTypesError'))
     }
-  }, [])
+  }, [t])
 
   useEffect(() => {
     fetchProducts()
@@ -153,7 +155,7 @@ export default function ProductsPage() {
     fetchProductTypes()
   }, [fetchProducts, fetchSuppliers, fetchProductTypes])
 
-  // ── Product Type handlers ------------------------------------------------
+  // -- Product Type handlers ------------------------------------------------
 
   async function handleAddType() {
     if (!newTypeName.trim()) return
@@ -171,7 +173,7 @@ export default function ProductsPage() {
         throw new Error(body?.error ?? 'Request failed')
       }
 
-      toast.success('Product type created')
+      toast.success(t('admin.products.typeCreated'))
       setNewTypeName('')
       fetchProductTypes()
     } catch (err) {
@@ -198,7 +200,7 @@ export default function ProductsPage() {
         throw new Error(body?.error ?? 'Request failed')
       }
 
-      toast.success('Product type updated')
+      toast.success(t('admin.products.typeUpdated'))
       setEditingTypeId(null)
       fetchProductTypes()
     } catch (err) {
@@ -226,7 +228,7 @@ export default function ProductsPage() {
       }
 
       toast.success(
-        currentActive ? 'Product type deactivated' : 'Product type activated',
+        currentActive ? t('admin.products.typeDeactivated') : t('admin.products.typeActivated'),
       )
       fetchProductTypes()
     } catch (err) {
@@ -236,7 +238,7 @@ export default function ProductsPage() {
     }
   }
 
-  // ── Dialog helpers -------------------------------------------------------
+  // -- Dialog helpers -------------------------------------------------------
 
   function openCreate() {
     setEditingId(null)
@@ -260,11 +262,11 @@ export default function ProductsPage() {
     setDialogOpen(true)
   }
 
-  // ── Submit ---------------------------------------------------------------
+  // -- Submit ---------------------------------------------------------------
 
   async function handleSubmit() {
     if (!form.name || !form.articleCode || !form.supplierId) {
-      toast.error('Please fill in all required fields')
+      toast.error(t('admin.products.requiredFields'))
       return
     }
 
@@ -316,7 +318,7 @@ export default function ProductsPage() {
         throw new Error(body?.error ?? 'Request failed')
       }
 
-      toast.success(editingId ? 'Product updated' : 'Product created')
+      toast.success(editingId ? t('admin.products.updated') : t('admin.products.created'))
       setDialogOpen(false)
       fetchProducts()
     } catch (err) {
@@ -328,7 +330,7 @@ export default function ProductsPage() {
     }
   }
 
-  // ── Formatting -----------------------------------------------------------
+  // -- Formatting -----------------------------------------------------------
 
   function formatPrice(value: number | null): string {
     if (value == null) return '-'
@@ -340,34 +342,34 @@ export default function ProductsPage() {
     return String(value)
   }
 
-  const activeProductTypes = productTypes.filter((t) => t.isActive)
+  const activeProductTypes = productTypes.filter((pt) => pt.isActive)
 
-  // ── Render ---------------------------------------------------------------
+  // -- Render ---------------------------------------------------------------
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight">
-          Product Management
+          {t('admin.products.title')}
         </h1>
         <Button onClick={openCreate}>
           <Plus className="mr-2 h-4 w-4" />
-          Add Product
+          {t('admin.products.addProduct')}
         </Button>
       </div>
 
-      {/* ── Product Types ─────────────────────────────────────────────── */}
+      {/* -- Product Types -------------------------------------------------- */}
 
       <Card>
         <CardHeader>
-          <CardTitle>Product Types</CardTitle>
+          <CardTitle>{t('admin.products.productTypes')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
             {/* Add new type */}
             <div className="flex items-center gap-2">
               <Input
-                placeholder="New product type name..."
+                placeholder={t('admin.products.newTypePlaceholder')}
                 value={newTypeName}
                 onChange={(e) => setNewTypeName(e.target.value)}
                 onKeyDown={(e) => {
@@ -381,14 +383,14 @@ export default function ProductsPage() {
                 disabled={addingType || !newTypeName.trim()}
               >
                 <Plus className="mr-1 h-4 w-4" />
-                Add
+                {t('admin.products.add')}
               </Button>
             </div>
 
             {/* Type list */}
             {productTypes.length === 0 ? (
               <p className="text-sm text-muted-foreground">
-                No product types yet.
+                {t('admin.products.noTypes')}
               </p>
             ) : (
               <div className="flex flex-wrap gap-2">
@@ -472,34 +474,34 @@ export default function ProductsPage() {
         </CardContent>
       </Card>
 
-      {/* ── Products Table ────────────────────────────────────────────── */}
+      {/* -- Products Table ------------------------------------------------- */}
 
       <Card>
         <CardHeader>
-          <CardTitle>Products</CardTitle>
+          <CardTitle>{t('admin.products.subtitle')}</CardTitle>
         </CardHeader>
         <CardContent>
           {loading ? (
             <p className="py-8 text-center text-muted-foreground">
-              Loading...
+              {t('common.loading')}
             </p>
           ) : products.length === 0 ? (
             <p className="py-8 text-center text-muted-foreground">
-              No products found.
+              {t('admin.products.noProducts')}
             </p>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Article Code</TableHead>
-                  <TableHead>Supplier</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead className="text-right">Units/Box</TableHead>
-                  <TableHead className="text-right">Units/Pallet</TableHead>
-                  <TableHead className="text-right">Price/Unit</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="w-[80px]">Actions</TableHead>
+                  <TableHead>{t('admin.products.name')}</TableHead>
+                  <TableHead>{t('admin.products.articleCode')}</TableHead>
+                  <TableHead>{t('admin.products.supplier')}</TableHead>
+                  <TableHead>{t('admin.products.type')}</TableHead>
+                  <TableHead className="text-right">{t('admin.products.unitsPerBox')}</TableHead>
+                  <TableHead className="text-right">{t('admin.products.unitsPerPallet')}</TableHead>
+                  <TableHead className="text-right">{t('admin.products.pricePerUnit')}</TableHead>
+                  <TableHead>{t('admin.products.status')}</TableHead>
+                  <TableHead className="w-[80px]">{t('admin.products.actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -530,7 +532,7 @@ export default function ProductsPage() {
                           product.isActive ? 'default' : 'destructive'
                         }
                       >
-                        {product.isActive ? 'Active' : 'Inactive'}
+                        {product.isActive ? t('admin.products.active') : t('admin.products.inactive')}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -550,20 +552,20 @@ export default function ProductsPage() {
         </CardContent>
       </Card>
 
-      {/* ── Dialog ─────────────────────────────────────────────────────── */}
+      {/* -- Dialog --------------------------------------------------------- */}
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-[520px]">
           <DialogHeader>
             <DialogTitle>
-              {editingId ? 'Edit Product' : 'Add Product'}
+              {editingId ? t('admin.products.editTitle') : t('admin.products.addTitle')}
             </DialogTitle>
           </DialogHeader>
 
           <div className="grid gap-4 py-4">
             {/* Name */}
             <div className="grid gap-2">
-              <Label htmlFor="name">Name *</Label>
+              <Label htmlFor="name">{t('admin.products.nameLabel')}</Label>
               <Input
                 id="name"
                 value={form.name}
@@ -575,7 +577,7 @@ export default function ProductsPage() {
 
             {/* Article Code */}
             <div className="grid gap-2">
-              <Label htmlFor="articleCode">Article Code</Label>
+              <Label htmlFor="articleCode">{t('admin.products.articleCodeLabel')}</Label>
               <Input
                 id="articleCode"
                 value={form.articleCode}
@@ -590,7 +592,7 @@ export default function ProductsPage() {
 
             {/* Supplier */}
             <div className="grid gap-2">
-              <Label htmlFor="supplierId">Supplier *</Label>
+              <Label htmlFor="supplierId">{t('admin.products.supplierLabel')}</Label>
               <Select
                 value={form.supplierId}
                 onValueChange={(value: string) =>
@@ -598,7 +600,7 @@ export default function ProductsPage() {
                 }
               >
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select supplier" />
+                  <SelectValue placeholder={t('admin.products.supplierPlaceholder')} />
                 </SelectTrigger>
                 <SelectContent>
                   {suppliers.map((sup) => (
@@ -612,7 +614,7 @@ export default function ProductsPage() {
 
             {/* Product Type */}
             <div className="grid gap-2">
-              <Label htmlFor="productTypeId">Product Type</Label>
+              <Label htmlFor="productTypeId">{t('admin.products.typeLabel')}</Label>
               <Select
                 value={form.productTypeId || 'none'}
                 onValueChange={(value: string) =>
@@ -623,10 +625,10 @@ export default function ProductsPage() {
                 }
               >
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select product type" />
+                  <SelectValue placeholder={t('admin.products.typePlaceholder')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">None</SelectItem>
+                  <SelectItem value="none">{t('admin.products.none')}</SelectItem>
                   {activeProductTypes.map((type) => (
                     <SelectItem key={type.id} value={type.id}>
                       {type.name}
@@ -639,7 +641,7 @@ export default function ProductsPage() {
             {/* Units per Box & Units per Pallet */}
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="unitsPerBox">Units per Box</Label>
+                <Label htmlFor="unitsPerBox">{t('admin.products.unitsPerBoxLabel')}</Label>
                 <Input
                   id="unitsPerBox"
                   type="number"
@@ -654,7 +656,7 @@ export default function ProductsPage() {
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="unitsPerPallet">Units per Pallet</Label>
+                <Label htmlFor="unitsPerPallet">{t('admin.products.unitsPerPalletLabel')}</Label>
                 <Input
                   id="unitsPerPallet"
                   type="number"
@@ -672,7 +674,7 @@ export default function ProductsPage() {
 
             {/* Price per Unit */}
             <div className="grid gap-2">
-              <Label htmlFor="pricePerUnit">Price per Unit</Label>
+              <Label htmlFor="pricePerUnit">{t('admin.products.pricePerUnitLabel')}</Label>
               <Input
                 id="pricePerUnit"
                 type="number"
@@ -690,7 +692,7 @@ export default function ProductsPage() {
 
             {/* CSRD Requirements */}
             <div className="grid gap-2">
-              <Label htmlFor="csrdRequirements">CSRD Requirements</Label>
+              <Label htmlFor="csrdRequirements">{t('admin.products.csrdLabel')}</Label>
               <Textarea
                 id="csrdRequirements"
                 value={form.csrdRequirements}
@@ -717,7 +719,7 @@ export default function ProductsPage() {
                     }))
                   }
                 />
-                <Label htmlFor="isActive">Active</Label>
+                <Label htmlFor="isActive">{t('admin.products.activeLabel')}</Label>
               </div>
             )}
           </div>
@@ -728,14 +730,14 @@ export default function ProductsPage() {
               onClick={() => setDialogOpen(false)}
               disabled={submitting}
             >
-              Cancel
+              {t('admin.products.cancel')}
             </Button>
             <Button onClick={handleSubmit} disabled={submitting}>
               {submitting
-                ? 'Saving...'
+                ? t('admin.products.saving')
                 : editingId
-                  ? 'Update'
-                  : 'Create'}
+                  ? t('admin.products.update')
+                  : t('admin.products.create')}
             </Button>
           </DialogFooter>
         </DialogContent>

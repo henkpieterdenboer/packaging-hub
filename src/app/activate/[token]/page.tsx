@@ -15,9 +15,11 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import { useTranslation } from '@/i18n/use-translation'
 
 export default function ActivatePage() {
   const params = useParams<{ token: string }>()
+  const { t } = useTranslation()
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState('')
@@ -29,12 +31,12 @@ export default function ActivatePage() {
     setError('')
 
     if (password !== confirmPassword) {
-      setError('Passwords do not match.')
+      setError(t('activate.passwordMismatch'))
       return
     }
 
     if (password.length < 8) {
-      setError('Password must be at least 8 characters.')
+      setError(t('activate.passwordTooShort'))
       return
     }
 
@@ -50,12 +52,12 @@ export default function ActivatePage() {
       const data = await res.json()
 
       if (!res.ok) {
-        setError(data.error || 'Failed to activate account.')
+        setError(data.error || t('activate.failed'))
       } else {
         setIsSuccess(true)
       }
     } catch {
-      setError('An unexpected error occurred. Please try again.')
+      setError(t('auth.unexpectedError'))
     } finally {
       setIsLoading(false)
     }
@@ -69,14 +71,14 @@ export default function ActivatePage() {
             <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
               <CheckCircle className="h-6 w-6 text-green-600" />
             </div>
-            <CardTitle className="text-2xl">Account Activated</CardTitle>
+            <CardTitle className="text-2xl">{t('activate.successTitle')}</CardTitle>
             <CardDescription>
-              Your account has been activated successfully. You can now sign in.
+              {t('activate.successMessage')}
             </CardDescription>
           </CardHeader>
           <CardFooter className="justify-center">
             <Button asChild>
-              <Link href="/login">Go to Sign In</Link>
+              <Link href="/login">{t('activate.goToSignIn')}</Link>
             </Button>
           </CardFooter>
         </Card>
@@ -91,9 +93,9 @@ export default function ActivatePage() {
           <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-lg bg-primary">
             <Package className="h-6 w-6 text-primary-foreground" />
           </div>
-          <CardTitle className="text-2xl">Activate Your Account</CardTitle>
+          <CardTitle className="text-2xl">{t('activate.title')}</CardTitle>
           <CardDescription>
-            Choose a password to activate your account.
+            {t('activate.description')}
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
@@ -104,11 +106,11 @@ export default function ActivatePage() {
               </div>
             )}
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">{t('activate.password')}</Label>
               <Input
                 id="password"
                 type="password"
-                placeholder="Enter your password"
+                placeholder={t('activate.passwordPlaceholder')}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -117,15 +119,15 @@ export default function ActivatePage() {
                 disabled={isLoading}
               />
               <p className="text-xs text-muted-foreground">
-                At least 8 characters with uppercase, lowercase, and a number.
+                {t('activate.passwordHint')}
               </p>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm Password</Label>
+              <Label htmlFor="confirmPassword">{t('activate.confirmPassword')}</Label>
               <Input
                 id="confirmPassword"
                 type="password"
-                placeholder="Confirm your password"
+                placeholder={t('activate.confirmPlaceholder')}
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
@@ -137,7 +139,7 @@ export default function ActivatePage() {
           </CardContent>
           <CardFooter>
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? 'Activating...' : 'Activate Account'}
+              {isLoading ? t('activate.submitting') : t('activate.submit')}
             </Button>
           </CardFooter>
         </form>

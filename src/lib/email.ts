@@ -2,6 +2,8 @@ import nodemailer from 'nodemailer'
 import type { Transporter } from 'nodemailer'
 import { cookies } from 'next/headers'
 import { prisma } from '@/lib/db'
+import { getServerTranslation } from '@/i18n/server'
+import type { TranslationFunction } from '@/i18n'
 
 const APP_URL = process.env.APP_URL || 'http://localhost:3000'
 const DEMO_EMAIL = process.env.DEMO_EMAIL
@@ -126,13 +128,10 @@ function addDemoBanner(html: string, originalTo: string, provider: EmailProvider
   return banner + html
 }
 
-function getUnitLabel(unit: string): string {
-  const labels: Record<string, string> = {
-    PIECE: 'Piece(s)',
-    BOX: 'Box(es)',
-    PALLET: 'Pallet(s)',
-  }
-  return labels[unit] || unit
+function getUnitLabel(unit: string, t: TranslationFunction): string {
+  const key = `emailTemplates.order.unitLabels.${unit}`
+  const label = t(key)
+  return label !== key ? label : unit
 }
 
 export async function sendOrderEmail(
@@ -140,10 +139,12 @@ export async function sendOrderEmail(
   items: OrderItemEmailData[],
   supplier: SupplierEmailData,
   employee: EmployeeEmailData,
-  options?: { employeeEmail?: string; orderId?: string; sentById?: string },
+  options?: { employeeEmail?: string; orderId?: string; sentById?: string; language?: string },
 ): Promise<{ etherealUrl?: string; emailLogId?: string }> {
   const { transporter, provider } = await getTransporter()
   const demoTarget = await getDemoEmailTarget()
+  const lang = options?.language || 'en'
+  const t = getServerTranslation(lang)
 
   const itemRows = items
     .map(
@@ -152,27 +153,27 @@ export async function sendOrderEmail(
         <td style="border: 1px solid #ddd; padding: 8px;">${item.product.name}</td>
         <td style="border: 1px solid #ddd; padding: 8px;">${item.product.articleCode}</td>
         <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">${item.quantity}</td>
-        <td style="border: 1px solid #ddd; padding: 8px;">${getUnitLabel(item.unit)}</td>
+        <td style="border: 1px solid #ddd; padding: 8px;">${getUnitLabel(item.unit, t)}</td>
       </tr>`,
     )
     .join('')
 
   const notesSection = order.notes
-    ? `<p style="margin-top: 16px;"><strong>Notes:</strong> ${order.notes}</p>`
+    ? `<p style="margin-top: 16px;"><strong>${t('emailTemplates.order.notes')}</strong> ${order.notes}</p>`
     : ''
 
   let html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <h2 style="color: #333;">New Order ${order.orderNumber}</h2>
-      <p>Dear ${supplier.name},</p>
-      <p>A new order has been placed by ${employee.firstName} ${employee.lastName}.</p>
+      <h2 style="color: #333;">${t('emailTemplates.order.subject', { orderNumber: order.orderNumber, supplierName: supplier.name })}</h2>
+      <p>${t('emailTemplates.order.greeting', { supplierName: supplier.name })}</p>
+      <p>${t('emailTemplates.order.intro', { employeeName: `${employee.firstName} ${employee.lastName}` })}</p>
       <table style="width: 100%; border-collapse: collapse; margin-top: 16px;">
         <thead>
           <tr style="background-color: #f4f4f4;">
-            <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Product</th>
-            <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Article Code</th>
-            <th style="border: 1px solid #ddd; padding: 8px; text-align: right;">Quantity</th>
-            <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Unit</th>
+            <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">${t('emailTemplates.order.product')}</th>
+            <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">${t('emailTemplates.order.articleCode')}</th>
+            <th style="border: 1px solid #ddd; padding: 8px; text-align: right;">${t('emailTemplates.order.quantity')}</th>
+            <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">${t('emailTemplates.order.unit')}</th>
           </tr>
         </thead>
         <tbody>
@@ -181,7 +182,7 @@ export async function sendOrderEmail(
       </table>
       ${notesSection}
       <p style="margin-top: 24px; color: #666; font-size: 12px;">
-        This is an automated message from the packaging materials ordering system.
+        ${t('emailTemplates.order.footer')}
       </p>
     </div>
   `
@@ -196,7 +197,7 @@ export async function sendOrderEmail(
   const ccList = demoTarget ? undefined : (baseCcEmails.length > 0 ? baseCcEmails : undefined)
 
   const subjectPrefix = IS_TEST_MODE ? '[TEST] ' : ''
-  const subject = `${subjectPrefix}New Order ${order.orderNumber} - ${supplier.name}`
+  const subject = `${subjectPrefix}${t('emailTemplates.order.subject', { orderNumber: order.orderNumber, supplierName: supplier.name })}`
 
   if (IS_TEST_MODE && demoTarget) {
     html = addDemoBanner(html, supplier.email, provider, actualTo)
@@ -246,32 +247,34 @@ export async function sendActivationEmail(
   firstName: string,
   token: string,
   sentById?: string,
+  language?: string,
 ): Promise<{ etherealUrl?: string; emailLogId?: string }> {
   const { transporter, provider } = await getTransporter()
   const demoTarget = await getDemoEmailTarget()
+  const t = getServerTranslation(language || 'en')
   const activationUrl = `${APP_URL}/activate/${token}`
 
   let html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <h2 style="color: #333;">Activate Your Account</h2>
-      <p>Hello ${firstName},</p>
-      <p>An account has been created for you in the packaging materials ordering system. Please click the button below to set your password and activate your account.</p>
+      <h2 style="color: #333;">${t('emailTemplates.activation.title')}</h2>
+      <p>${t('emailTemplates.activation.greeting', { firstName })}</p>
+      <p>${t('emailTemplates.activation.intro')}</p>
       <div style="text-align: center; margin: 32px 0;">
         <a href="${activationUrl}" style="background-color: #0070f3; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
-          Activate Account
+          ${t('emailTemplates.activation.button')}
         </a>
       </div>
-      <p style="color: #666; font-size: 14px;">If the button does not work, copy and paste this link into your browser:</p>
+      <p style="color: #666; font-size: 14px;">${t('emailTemplates.activation.linkHint')}</p>
       <p style="color: #666; font-size: 14px; word-break: break-all;">${activationUrl}</p>
       <p style="margin-top: 24px; color: #666; font-size: 12px;">
-        This link will expire in 48 hours. If you did not expect this email, you can safely ignore it.
+        ${t('emailTemplates.activation.expiry')}
       </p>
     </div>
   `
 
   const actualTo = demoTarget || email
   const subjectPrefix = IS_TEST_MODE ? '[TEST] ' : ''
-  const subject = `${subjectPrefix}Activate Your Account`
+  const subject = `${subjectPrefix}${t('emailTemplates.activation.subject')}`
 
   if (IS_TEST_MODE && demoTarget) {
     html = addDemoBanner(html, email, provider, actualTo)
@@ -319,32 +322,34 @@ export async function sendPasswordResetEmail(
   firstName: string,
   token: string,
   sentById?: string,
+  language?: string,
 ): Promise<{ etherealUrl?: string; emailLogId?: string }> {
   const { transporter, provider } = await getTransporter()
   const demoTarget = await getDemoEmailTarget()
+  const t = getServerTranslation(language || 'en')
   const resetUrl = `${APP_URL}/reset-password/${token}`
 
   let html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <h2 style="color: #333;">Reset Your Password</h2>
-      <p>Hello ${firstName},</p>
-      <p>We received a request to reset your password. Click the button below to choose a new password.</p>
+      <h2 style="color: #333;">${t('emailTemplates.passwordReset.title')}</h2>
+      <p>${t('emailTemplates.passwordReset.greeting', { firstName })}</p>
+      <p>${t('emailTemplates.passwordReset.intro')}</p>
       <div style="text-align: center; margin: 32px 0;">
         <a href="${resetUrl}" style="background-color: #0070f3; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
-          Reset Password
+          ${t('emailTemplates.passwordReset.button')}
         </a>
       </div>
-      <p style="color: #666; font-size: 14px;">If the button does not work, copy and paste this link into your browser:</p>
+      <p style="color: #666; font-size: 14px;">${t('emailTemplates.passwordReset.linkHint')}</p>
       <p style="color: #666; font-size: 14px; word-break: break-all;">${resetUrl}</p>
       <p style="margin-top: 24px; color: #666; font-size: 12px;">
-        This link will expire in 1 hour. If you did not request a password reset, you can safely ignore this email.
+        ${t('emailTemplates.passwordReset.expiry')}
       </p>
     </div>
   `
 
   const actualTo = demoTarget || email
   const subjectPrefix = IS_TEST_MODE ? '[TEST] ' : ''
-  const subject = `${subjectPrefix}Reset Your Password`
+  const subject = `${subjectPrefix}${t('emailTemplates.passwordReset.subject')}`
 
   if (IS_TEST_MODE && demoTarget) {
     html = addDemoBanner(html, email, provider, actualTo)

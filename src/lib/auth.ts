@@ -34,6 +34,7 @@ export const authOptions: NextAuthOptions = {
             roles: user.roles,
             firstName: user.firstName,
             lastName: user.lastName,
+            preferredLanguage: user.preferredLanguage,
           }
         } catch (error) {
           console.error('[Auth] authorize error:', error)
@@ -51,13 +52,14 @@ export const authOptions: NextAuthOptions = {
         token.roles = user.roles
         token.firstName = user.firstName
         token.lastName = user.lastName
+        token.preferredLanguage = user.preferredLanguage
       }
 
-      // Refresh roles from DB on every request
+      // Refresh roles and language from DB on every request
       if (token.id) {
         const dbUser = await prisma.user.findUnique({
           where: { id: token.id as string },
-          select: { roles: true, isActive: true },
+          select: { roles: true, isActive: true, preferredLanguage: true },
         })
 
         if (!dbUser || !dbUser.isActive) {
@@ -66,6 +68,7 @@ export const authOptions: NextAuthOptions = {
         }
 
         token.roles = dbUser.roles
+        token.preferredLanguage = dbUser.preferredLanguage
       }
 
       return token
@@ -76,6 +79,7 @@ export const authOptions: NextAuthOptions = {
         session.user.roles = token.roles as string[]
         session.user.firstName = token.firstName as string
         session.user.lastName = token.lastName as string
+        session.user.preferredLanguage = token.preferredLanguage as string
       }
       return session
     },

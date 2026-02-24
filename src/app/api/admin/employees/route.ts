@@ -115,7 +115,7 @@ export async function POST(request: Request) {
       },
     })
 
-    const emailResult = await sendActivationEmail(user.email, user.firstName, activationToken, session.user.id)
+    const emailResult = await sendActivationEmail(user.email, user.firstName, activationToken, session.user.id, 'en')
 
     return NextResponse.json({ ...user, etherealUrl: emailResult.etherealUrl }, { status: 201 })
   } catch (error) {

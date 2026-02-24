@@ -173,6 +173,7 @@ export async function POST(request: Request) {
           employeeEmail: session.user.email ?? undefined,
           orderId: order.id,
           sentById: session.user.id,
+          language: order.supplier.language,
         },
       )
       etherealUrl = emailResult.etherealUrl
