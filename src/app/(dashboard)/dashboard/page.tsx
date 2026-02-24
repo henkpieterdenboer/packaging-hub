@@ -2,6 +2,7 @@ import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { redirect } from 'next/navigation'
+import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { ShoppingCart, Clock, Package, Truck, Mail, ExternalLink } from 'lucide-react'
 
@@ -21,30 +22,36 @@ export default async function DashboardPage() {
       prisma.supplier.count({ where: { isActive: true } }),
     ])
 
+  const isAdmin = session.user.roles.includes('ADMIN')
+
   const stats = [
     {
       title: 'Total Orders',
       value: totalOrders,
       icon: ShoppingCart,
       description: 'All time orders placed',
+      href: '/orders',
     },
     {
       title: 'Pending Orders',
       value: pendingOrders,
       icon: Clock,
       description: 'Awaiting delivery',
+      href: '/orders?status=PENDING',
     },
     {
       title: 'Products',
       value: totalProducts,
       icon: Package,
       description: 'Active products',
+      href: '/products',
     },
     {
       title: 'Suppliers',
       value: totalSuppliers,
       icon: Truck,
       description: 'Active suppliers',
+      href: isAdmin ? '/admin/suppliers' : undefined,
     },
   ]
 
@@ -62,8 +69,8 @@ export default async function DashboardPage() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => {
           const Icon = stat.icon
-          return (
-            <Card key={stat.title}>
+          const card = (
+            <Card className={stat.href ? 'hover:shadow-md transition-shadow' : ''}>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium text-gray-500">
                   {stat.title}
@@ -80,6 +87,16 @@ export default async function DashboardPage() {
               </CardContent>
             </Card>
           )
+
+          if (stat.href) {
+            return (
+              <Link key={stat.title} href={stat.href} className="block">
+                {card}
+              </Link>
+            )
+          }
+
+          return <div key={stat.title}>{card}</div>
         })}
       </div>
 

@@ -35,6 +35,9 @@ interface OrderDetail {
     id: string
     quantity: number
     unit: string
+    quantityReceived: number | null
+    receivedDate: string | null
+    receivedBy: { firstName: string; lastName: string } | null
     product: {
       id: string
       name: string
@@ -230,23 +233,53 @@ export default function OrderDetailPage() {
                 <TableHead>Article Code</TableHead>
                 <TableHead className="text-right">Quantity</TableHead>
                 <TableHead>Unit</TableHead>
+                <TableHead className="text-right">Received</TableHead>
+                <TableHead>Received Date</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {order.items.map((item) => (
-                <TableRow key={item.id}>
-                  <TableCell className="font-medium">
-                    {item.product.name}
-                  </TableCell>
-                  <TableCell className="font-mono text-sm text-gray-500">
-                    {item.product.articleCode}
-                  </TableCell>
-                  <TableCell className="text-right">{item.quantity}</TableCell>
-                  <TableCell>
-                    {UnitLabels[item.unit as UnitType] ?? item.unit}
-                  </TableCell>
-                </TableRow>
-              ))}
+              {order.items.map((item) => {
+                const received = item.quantityReceived ?? 0
+                const isFullyReceived = received >= item.quantity
+                const isPartiallyReceived = received > 0 && received < item.quantity
+
+                return (
+                  <TableRow key={item.id}>
+                    <TableCell className="font-medium">
+                      {item.product.name}
+                    </TableCell>
+                    <TableCell className="font-mono text-sm text-gray-500">
+                      {item.product.articleCode}
+                    </TableCell>
+                    <TableCell className="text-right">{item.quantity}</TableCell>
+                    <TableCell>
+                      {UnitLabels[item.unit as UnitType] ?? item.unit}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <span
+                        className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ${
+                          isFullyReceived
+                            ? 'bg-green-100 text-green-800'
+                            : isPartiallyReceived
+                              ? 'bg-yellow-100 text-yellow-800'
+                              : 'text-gray-500'
+                        }`}
+                      >
+                        {received} / {item.quantity}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-sm text-gray-500">
+                      {item.receivedDate
+                        ? new Date(item.receivedDate).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric',
+                          })
+                        : '-'}
+                    </TableCell>
+                  </TableRow>
+                )
+              })}
             </TableBody>
           </Table>
         </CardContent>

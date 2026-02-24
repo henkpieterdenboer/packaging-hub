@@ -66,6 +66,22 @@ export const ArticleGroupLabels: Record<ArticleGroupType, string> = {
   OTHER: 'Other',
 }
 
+// ─── Email Type ──────────────────────────────────────────────────────────────
+
+export const EmailType = {
+  ORDER: 'ORDER',
+  ACTIVATION: 'ACTIVATION',
+  PASSWORD_RESET: 'PASSWORD_RESET',
+} as const
+
+export type EmailTypeType = (typeof EmailType)[keyof typeof EmailType]
+
+export const EmailTypeLabels: Record<EmailTypeType, string> = {
+  ORDER: 'Order',
+  ACTIVATION: 'Activation',
+  PASSWORD_RESET: 'Password Reset',
+}
+
 // ─── Audit Actions ───────────────────────────────────────────────────────────
 
 export const AuditAction = {
@@ -77,6 +93,7 @@ export const AuditAction = {
   ORDER_EMAIL_SENT: 'ORDER_EMAIL_SENT',
   PASSWORD_RESET: 'PASSWORD_RESET',
   ACCOUNT_ACTIVATED: 'ACCOUNT_ACTIVATED',
+  GOODS_RECEIVED: 'GOODS_RECEIVED',
 } as const
 
 export type AuditActionType = (typeof AuditAction)[keyof typeof AuditAction]

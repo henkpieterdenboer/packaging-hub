@@ -1,8 +1,8 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -43,8 +43,24 @@ const statusColors: Record<string, string> = {
 }
 
 export default function OrdersPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center py-12">
+          <p className="text-sm text-gray-500">Loading...</p>
+        </div>
+      }
+    >
+      <OrdersContent />
+    </Suspense>
+  )
+}
+
+function OrdersContent() {
   const { status } = useSession()
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const statusFilter = searchParams.get('status')
 
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
@@ -59,7 +75,10 @@ export default function OrdersPage() {
   useEffect(() => {
     async function fetchOrders() {
       try {
-        const res = await fetch('/api/orders')
+        const url = statusFilter
+          ? `/api/orders?status=${statusFilter}`
+          : '/api/orders'
+        const res = await fetch(url)
         if (!res.ok) throw new Error('Failed to fetch orders')
         const data = await res.json()
         setOrders(data)
@@ -74,7 +93,7 @@ export default function OrdersPage() {
     if (status === 'authenticated') {
       fetchOrders()
     }
-  }, [status])
+  }, [status, statusFilter])
 
   if (status === 'loading') {
     return (
@@ -156,7 +175,11 @@ export default function OrdersPage() {
             </TableHeader>
             <TableBody>
               {orders.map((order) => (
-                <TableRow key={order.id}>
+                <TableRow
+                  key={order.id}
+                  className="cursor-pointer hover:bg-gray-50"
+                  onClick={() => router.push(`/orders/${order.id}`)}
+                >
                   <TableCell className="font-medium font-mono">
                     {order.orderNumber}
                   </TableCell>

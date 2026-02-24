@@ -1,6 +1,7 @@
 import nodemailer from 'nodemailer'
 import type { Transporter } from 'nodemailer'
 import { cookies } from 'next/headers'
+import { prisma } from '@/lib/db'
 
 const APP_URL = process.env.APP_URL || 'http://localhost:3000'
 const DEMO_EMAIL = process.env.DEMO_EMAIL
@@ -139,7 +140,8 @@ export async function sendOrderEmail(
   items: OrderItemEmailData[],
   supplier: SupplierEmailData,
   employee: EmployeeEmailData,
-): Promise<{ etherealUrl?: string }> {
+  options?: { employeeEmail?: string; orderId?: string; sentById?: string },
+): Promise<{ etherealUrl?: string; emailLogId?: string }> {
   const { transporter, provider } = await getTransporter()
   const demoTarget = await getDemoEmailTarget()
 
@@ -185,8 +187,16 @@ export async function sendOrderEmail(
   `
 
   const actualTo = demoTarget || supplier.email
-  const ccList = demoTarget ? undefined : (supplier.ccEmails.length > 0 ? supplier.ccEmails : undefined)
+
+  // Build CC list: supplier CC emails + employee email (only when not in demo redirect mode)
+  const baseCcEmails = [
+    ...supplier.ccEmails,
+    ...(options?.employeeEmail && !demoTarget ? [options.employeeEmail] : []),
+  ]
+  const ccList = demoTarget ? undefined : (baseCcEmails.length > 0 ? baseCcEmails : undefined)
+
   const subjectPrefix = IS_TEST_MODE ? '[TEST] ' : ''
+  const subject = `${subjectPrefix}New Order ${order.orderNumber} - ${supplier.name}`
 
   if (IS_TEST_MODE && demoTarget) {
     html = addDemoBanner(html, supplier.email, provider, actualTo)
@@ -196,24 +206,47 @@ export async function sendOrderEmail(
     from: process.env.MAIL_FROM || '"Packaging Orders" <orders@example.com>',
     to: actualTo,
     cc: ccList,
-    subject: `${subjectPrefix}New Order ${order.orderNumber} - ${supplier.name}`,
+    subject,
     html,
   })
 
+  let etherealUrl: string | undefined
   if (provider === 'ethereal') {
     const url = nodemailer.getTestMessageUrl(info)
     console.log('[Email] Ethereal preview URL:', url)
-    return { etherealUrl: url || undefined }
+    etherealUrl = url || undefined
   }
 
-  return {}
+  // Log the email
+  let emailLogId: string | undefined
+  try {
+    const log = await prisma.emailLog.create({
+      data: {
+        type: 'ORDER',
+        subject,
+        toAddress: actualTo,
+        ccAddresses: ccList || [],
+        orderId: options?.orderId,
+        sentById: options?.sentById,
+        provider,
+        etherealUrl: etherealUrl || null,
+        status: 'SENT',
+      },
+    })
+    emailLogId = log.id
+  } catch (logError) {
+    console.error('[Email] Failed to create email log:', logError)
+  }
+
+  return { etherealUrl, emailLogId }
 }
 
 export async function sendActivationEmail(
   email: string,
   firstName: string,
   token: string,
-): Promise<{ etherealUrl?: string }> {
+  sentById?: string,
+): Promise<{ etherealUrl?: string; emailLogId?: string }> {
   const { transporter, provider } = await getTransporter()
   const demoTarget = await getDemoEmailTarget()
   const activationUrl = `${APP_URL}/activate/${token}`
@@ -238,6 +271,7 @@ export async function sendActivationEmail(
 
   const actualTo = demoTarget || email
   const subjectPrefix = IS_TEST_MODE ? '[TEST] ' : ''
+  const subject = `${subjectPrefix}Activate Your Account`
 
   if (IS_TEST_MODE && demoTarget) {
     html = addDemoBanner(html, email, provider, actualTo)
@@ -246,24 +280,46 @@ export async function sendActivationEmail(
   const info = await transporter.sendMail({
     from: process.env.MAIL_FROM || '"Packaging Orders" <orders@example.com>',
     to: actualTo,
-    subject: `${subjectPrefix}Activate Your Account`,
+    subject,
     html,
   })
 
+  let etherealUrl: string | undefined
   if (provider === 'ethereal') {
     const url = nodemailer.getTestMessageUrl(info)
     console.log('[Email] Ethereal preview URL:', url)
-    return { etherealUrl: url || undefined }
+    etherealUrl = url || undefined
   }
 
-  return {}
+  // Log the email
+  let emailLogId: string | undefined
+  try {
+    const log = await prisma.emailLog.create({
+      data: {
+        type: 'ACTIVATION',
+        subject,
+        toAddress: actualTo,
+        ccAddresses: [],
+        sentById,
+        provider,
+        etherealUrl: etherealUrl || null,
+        status: 'SENT',
+      },
+    })
+    emailLogId = log.id
+  } catch (logError) {
+    console.error('[Email] Failed to create email log:', logError)
+  }
+
+  return { etherealUrl, emailLogId }
 }
 
 export async function sendPasswordResetEmail(
   email: string,
   firstName: string,
   token: string,
-): Promise<{ etherealUrl?: string }> {
+  sentById?: string,
+): Promise<{ etherealUrl?: string; emailLogId?: string }> {
   const { transporter, provider } = await getTransporter()
   const demoTarget = await getDemoEmailTarget()
   const resetUrl = `${APP_URL}/reset-password/${token}`
@@ -288,6 +344,7 @@ export async function sendPasswordResetEmail(
 
   const actualTo = demoTarget || email
   const subjectPrefix = IS_TEST_MODE ? '[TEST] ' : ''
+  const subject = `${subjectPrefix}Reset Your Password`
 
   if (IS_TEST_MODE && demoTarget) {
     html = addDemoBanner(html, email, provider, actualTo)
@@ -296,15 +353,36 @@ export async function sendPasswordResetEmail(
   const info = await transporter.sendMail({
     from: process.env.MAIL_FROM || '"Packaging Orders" <orders@example.com>',
     to: actualTo,
-    subject: `${subjectPrefix}Reset Your Password`,
+    subject,
     html,
   })
 
+  let etherealUrl: string | undefined
   if (provider === 'ethereal') {
     const url = nodemailer.getTestMessageUrl(info)
     console.log('[Email] Ethereal preview URL:', url)
-    return { etherealUrl: url || undefined }
+    etherealUrl = url || undefined
   }
 
-  return {}
+  // Log the email
+  let emailLogId: string | undefined
+  try {
+    const log = await prisma.emailLog.create({
+      data: {
+        type: 'PASSWORD_RESET',
+        subject,
+        toAddress: actualTo,
+        ccAddresses: [],
+        sentById,
+        provider,
+        etherealUrl: etherealUrl || null,
+        status: 'SENT',
+      },
+    })
+    emailLogId = log.id
+  } catch (logError) {
+    console.error('[Email] Failed to create email log:', logError)
+  }
+
+  return { etherealUrl, emailLogId }
 }

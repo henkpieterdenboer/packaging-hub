@@ -6,7 +6,7 @@ import { createOrderSchema } from '@/lib/validations'
 import { generateOrderNumber } from '@/lib/order-utils'
 import { sendOrderEmail } from '@/lib/email'
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const session = await getServerSession(authOptions)
 
@@ -17,10 +17,24 @@ export async function GET() {
       )
     }
 
+    const { searchParams } = new URL(request.url)
+    const statusFilter = searchParams.get('status')
+    const receivable = searchParams.get('receivable')
+
     const isAdmin = session.user.roles.includes('ADMIN')
 
+    const whereClause: Record<string, unknown> = isAdmin
+      ? {}
+      : { employeeId: session.user.id }
+
+    if (receivable === 'true') {
+      whereClause.status = { in: ['PENDING', 'PARTIALLY_RECEIVED'] }
+    } else if (statusFilter) {
+      whereClause.status = statusFilter
+    }
+
     const orders = await prisma.order.findMany({
-      where: isAdmin ? {} : { employeeId: session.user.id },
+      where: whereClause,
       include: {
         employee: {
           select: { firstName: true, lastName: true },
@@ -154,6 +168,11 @@ export async function POST(request: Request) {
         {
           firstName: order.employee.firstName,
           lastName: order.employee.lastName,
+        },
+        {
+          employeeEmail: session.user.email ?? undefined,
+          orderId: order.id,
+          sentById: session.user.id,
         },
       )
       etherealUrl = emailResult.etherealUrl

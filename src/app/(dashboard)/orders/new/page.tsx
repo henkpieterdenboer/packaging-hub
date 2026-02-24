@@ -1,8 +1,8 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { Suspense, useEffect, useState, useCallback, useRef } from 'react'
 import { useSession } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -54,9 +54,13 @@ interface OrderLine {
   unit: UnitType
 }
 
-export default function NewOrderPage() {
+function NewOrderContent() {
   const { status } = useSession()
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const prefillSupplierId = searchParams.get('supplierId')
+  const prefillProductId = searchParams.get('productId')
+  const prefilled = useRef(false)
 
   const [suppliers, setSuppliers] = useState<Supplier[]>([])
   const [products, setProducts] = useState<Product[]>([])
@@ -81,6 +85,13 @@ export default function NewOrderPage() {
         if (!res.ok) throw new Error('Failed to fetch suppliers')
         const data = await res.json()
         setSuppliers(data)
+        // Auto-select supplier from URL params
+        if (prefillSupplierId && !prefilled.current) {
+          const match = data.find((s: Supplier) => s.id === prefillSupplierId)
+          if (match) {
+            setSelectedSupplierId(prefillSupplierId)
+          }
+        }
       } catch (err) {
         toast.error('Failed to load suppliers')
         console.error('Failed to fetch suppliers:', err)
@@ -92,7 +103,7 @@ export default function NewOrderPage() {
     if (status === 'authenticated') {
       fetchSuppliers()
     }
-  }, [status])
+  }, [status, prefillSupplierId])
 
   useEffect(() => {
     if (!selectedSupplierId) {
@@ -108,7 +119,24 @@ export default function NewOrderPage() {
         if (!res.ok) throw new Error('Failed to fetch products')
         const data = await res.json()
         setProducts(data)
-        setOrderLines(new Map())
+        // Auto-set quantity for prefilled product
+        if (prefillProductId && !prefilled.current) {
+          const match = data.find((p: Product) => p.id === prefillProductId)
+          if (match) {
+            const initial = new Map<string, OrderLine>()
+            initial.set(prefillProductId, {
+              productId: prefillProductId,
+              quantity: 1,
+              unit: Unit.PIECE as UnitType,
+            })
+            setOrderLines(initial)
+            prefilled.current = true
+          } else {
+            setOrderLines(new Map())
+          }
+        } else {
+          setOrderLines(new Map())
+        }
       } catch (err) {
         toast.error('Failed to load products')
         console.error('Failed to fetch products:', err)
@@ -118,7 +146,7 @@ export default function NewOrderPage() {
     }
 
     fetchProducts()
-  }, [selectedSupplierId])
+  }, [selectedSupplierId, prefillProductId])
 
   const updateQuantity = useCallback(
     (productId: string, quantity: number) => {
@@ -503,5 +531,13 @@ export default function NewOrderPage() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function NewOrderPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center py-12"><p className="text-sm text-gray-500">Loading...</p></div>}>
+      <NewOrderContent />
+    </Suspense>
   )
 }

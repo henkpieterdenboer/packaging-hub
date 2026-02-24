@@ -13,7 +13,25 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Package, Search } from 'lucide-react'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import { Button } from '@/components/ui/button'
+import {
+  Package,
+  Search,
+  LayoutGrid,
+  List,
+  ArrowUp,
+  ArrowDown,
+  ShoppingCart,
+} from 'lucide-react'
+import Link from 'next/link'
 
 interface Supplier {
   id: string
@@ -57,6 +75,9 @@ export default function ProductCatalogPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+  const [sortField, setSortField] = useState<string>('name')
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -131,6 +152,65 @@ export default function ProductCatalogPage() {
     )
   }, [products, searchQuery])
 
+  const sortedProducts = useMemo(() => {
+    const sorted = [...filteredProducts].sort((a, b) => {
+      let aVal: string | number | null
+      let bVal: string | number | null
+
+      switch (sortField) {
+        case 'articleCode':
+          aVal = a.articleCode.toLowerCase()
+          bVal = b.articleCode.toLowerCase()
+          break
+        case 'supplier':
+          aVal = a.supplier.name.toLowerCase()
+          bVal = b.supplier.name.toLowerCase()
+          break
+        case 'pricePerUnit':
+          aVal = a.pricePerUnit
+          bVal = b.pricePerUnit
+          // Null values sort to the end regardless of direction
+          if (aVal === null && bVal === null) return 0
+          if (aVal === null) return 1
+          if (bVal === null) return -1
+          break
+        case 'name':
+        default:
+          aVal = a.name.toLowerCase()
+          bVal = b.name.toLowerCase()
+          break
+      }
+
+      if (aVal === null || bVal === null) return 0
+
+      let comparison = 0
+      if (aVal < bVal) comparison = -1
+      if (aVal > bVal) comparison = 1
+
+      return sortDirection === 'asc' ? comparison : -comparison
+    })
+
+    return sorted
+  }, [filteredProducts, sortField, sortDirection])
+
+  function handleTableHeaderClick(field: string) {
+    if (sortField === field) {
+      setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'))
+    } else {
+      setSortField(field)
+      setSortDirection('asc')
+    }
+  }
+
+  function renderSortIcon(field: string) {
+    if (sortField !== field) return null
+    return sortDirection === 'asc' ? (
+      <ArrowUp className="ml-1 inline h-3 w-3" />
+    ) : (
+      <ArrowDown className="ml-1 inline h-3 w-3" />
+    )
+  }
+
   if (status === 'loading') {
     return (
       <div className="flex items-center justify-center py-12">
@@ -145,13 +225,33 @@ export default function ProductCatalogPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight text-gray-900">
-          Product Catalog
-        </h2>
-        <p className="mt-1 text-sm text-gray-500">
-          Browse available packaging materials from all suppliers.
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight text-gray-900">
+            Product Catalog
+          </h2>
+          <p className="mt-1 text-sm text-gray-500">
+            Browse available packaging materials from all suppliers.
+          </p>
+        </div>
+        <div className="flex items-center gap-1">
+          <Button
+            variant={viewMode === 'grid' ? 'default' : 'outline'}
+            size="icon-sm"
+            onClick={() => setViewMode('grid')}
+            title="Grid view"
+          >
+            <LayoutGrid className="h-4 w-4" />
+          </Button>
+          <Button
+            variant={viewMode === 'list' ? 'default' : 'outline'}
+            size="icon-sm"
+            onClick={() => setViewMode('list')}
+            title="List view"
+          >
+            <List className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -235,8 +335,43 @@ export default function ProductCatalogPage() {
         </div>
       )}
 
+      {/* Sort controls for grid view */}
+      {viewMode === 'grid' && !loading && !error && filteredProducts.length > 0 && (
+        <div className="flex items-center gap-2">
+          <Label className="text-sm text-gray-500 whitespace-nowrap">Sort by</Label>
+          <Select
+            value={sortField}
+            onValueChange={(value) => setSortField(value)}
+          >
+            <SelectTrigger className="w-44">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="name">Name</SelectItem>
+              <SelectItem value="articleCode">Article Code</SelectItem>
+              <SelectItem value="supplier">Supplier</SelectItem>
+              <SelectItem value="pricePerUnit">Price</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button
+            variant="outline"
+            size="icon-sm"
+            onClick={() =>
+              setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'))
+            }
+            title={sortDirection === 'asc' ? 'Ascending' : 'Descending'}
+          >
+            {sortDirection === 'asc' ? (
+              <ArrowUp className="h-4 w-4" />
+            ) : (
+              <ArrowDown className="h-4 w-4" />
+            )}
+          </Button>
+        </div>
+      )}
+
       {/* Empty State */}
-      {!loading && !error && filteredProducts.length === 0 && (
+      {!loading && !error && sortedProducts.length === 0 && (
         <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-12">
           <Package className="h-12 w-12 text-gray-300" />
           <h3 className="mt-4 text-sm font-medium text-gray-900">
@@ -251,9 +386,9 @@ export default function ProductCatalogPage() {
       )}
 
       {/* Product Grid */}
-      {!loading && !error && filteredProducts.length > 0 && (
+      {!loading && !error && sortedProducts.length > 0 && viewMode === 'grid' && (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {filteredProducts.map((product) => (
+          {sortedProducts.map((product) => (
             <Card key={product.id}>
               <CardHeader className="pb-3">
                 <CardTitle className="text-base leading-snug">
@@ -305,9 +440,93 @@ export default function ProductCatalogPage() {
                     </span>
                   </div>
                 )}
+                <div className="pt-2">
+                  <Button variant="outline" size="sm" className="w-full" asChild>
+                    <Link href={`/orders/new?supplierId=${product.supplierId}&productId=${product.id}`}>
+                      <ShoppingCart className="h-3.5 w-3.5" />
+                      Order
+                    </Link>
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           ))}
+        </div>
+      )}
+
+      {/* Product List */}
+      {!loading && !error && sortedProducts.length > 0 && viewMode === 'list' && (
+        <div className="rounded-lg border bg-white overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead
+                  className="cursor-pointer select-none"
+                  onClick={() => handleTableHeaderClick('name')}
+                >
+                  Name{renderSortIcon('name')}
+                </TableHead>
+                <TableHead
+                  className="cursor-pointer select-none"
+                  onClick={() => handleTableHeaderClick('articleCode')}
+                >
+                  Article Code{renderSortIcon('articleCode')}
+                </TableHead>
+                <TableHead
+                  className="cursor-pointer select-none"
+                  onClick={() => handleTableHeaderClick('supplier')}
+                >
+                  Supplier{renderSortIcon('supplier')}
+                </TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>Units / Box</TableHead>
+                <TableHead>Units / Pallet</TableHead>
+                <TableHead
+                  className="cursor-pointer select-none"
+                  onClick={() => handleTableHeaderClick('pricePerUnit')}
+                >
+                  Price{renderSortIcon('pricePerUnit')}
+                </TableHead>
+                <TableHead className="text-right">Action</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {sortedProducts.map((product) => (
+                <TableRow key={product.id}>
+                  <TableCell className="font-medium">{product.name}</TableCell>
+                  <TableCell className="font-mono text-xs text-gray-500">
+                    {product.articleCode}
+                  </TableCell>
+                  <TableCell>{product.supplier.name}</TableCell>
+                  <TableCell>{product.productType?.name ?? '-'}</TableCell>
+                  <TableCell>
+                    {product.unitsPerBox != null ? product.unitsPerBox : '-'}
+                  </TableCell>
+                  <TableCell>
+                    {product.unitsPerPallet != null
+                      ? product.unitsPerPallet
+                      : '-'}
+                  </TableCell>
+                  <TableCell>
+                    {product.pricePerUnit != null
+                      ? new Intl.NumberFormat('en-US', {
+                          style: 'currency',
+                          currency: 'EUR',
+                        }).format(product.pricePerUnit)
+                      : '-'}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button variant="ghost" size="sm" asChild>
+                      <Link href={`/orders/new?supplierId=${product.supplierId}&productId=${product.id}`}>
+                        <ShoppingCart className="h-3.5 w-3.5" />
+                        Order
+                      </Link>
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </div>
       )}
     </div>

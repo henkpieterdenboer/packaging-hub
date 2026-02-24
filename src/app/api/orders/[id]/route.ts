@@ -31,6 +31,12 @@ export async function GET(
                 articleCode: true,
               },
             },
+            receivedBy: {
+              select: {
+                firstName: true,
+                lastName: true,
+              },
+            },
           },
         },
         supplier: {

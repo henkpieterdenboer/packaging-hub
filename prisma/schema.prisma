@@ -27,6 +27,7 @@ model User {
   receivedItems        OrderItem[] @relation("ReceivedBy")
   reportedReturns      Return[]
   auditLogs            AuditLog[]
+  emailsSent           EmailLog[] @relation("EmailsSent")
 }
 
 model Supplier {
@@ -88,6 +89,7 @@ model Order {
   employee     User     @relation(fields: [employeeId], references: [id])
   supplier     Supplier @relation(fields: [supplierId], references: [id])
   items        OrderItem[]
+  emailLogs    EmailLog[]
 }
 
 model OrderItem {
@@ -132,4 +134,23 @@ model AuditLog {
   createdAt  DateTime @default(now())
 
   user       User?    @relation(fields: [userId], references: [id])
+}
+
+model EmailLog {
+  id           String   @id @default(uuid())
+  type         String
+  subject      String
+  toAddress    String
+  ccAddresses  String[] @default([])
+  orderId      String?
+  sentById     String?
+  sentAt       DateTime @default(now())
+  provider     String
+  etherealUrl  String?
+  status       String   @default("SENT")
+  errorMessage String?
+  createdAt    DateTime @default(now())
+
+  order        Order?   @relation(fields: [orderId], references: [id])
+  sentBy       User?    @relation("EmailsSent", fields: [sentById], references: [id])
 }

@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useCallback } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useSession, signOut } from 'next-auth/react'
@@ -11,9 +12,14 @@ import {
   Users,
   Truck,
   PackageOpen,
+  PackageCheck,
+  Mail,
+  Settings,
   LogOut,
+  Menu,
 } from 'lucide-react'
 import { Separator } from '@/components/ui/separator'
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { cn } from '@/lib/utils'
 
 const mainNavItems = [
@@ -21,6 +27,8 @@ const mainNavItems = [
   { label: 'Products', href: '/products', icon: Package },
   { label: 'Orders', href: '/orders', icon: ShoppingCart },
   { label: 'New Order', href: '/orders/new', icon: PlusCircle },
+  { label: 'Goods Receipt', href: '/receiving', icon: PackageCheck },
+  { label: 'Emails', href: '/emails', icon: Mail },
 ]
 
 const adminNavItems = [
@@ -29,14 +37,14 @@ const adminNavItems = [
   { label: 'Products', href: '/admin/products', icon: PackageOpen },
 ]
 
-export default function Nav() {
-  const pathname = usePathname()
-  const { data: session } = useSession()
-
-  const isAdmin = session?.user?.roles?.includes('ADMIN')
-
+function NavContent({ pathname, session, isAdmin, onNavigate }: {
+  pathname: string
+  session: ReturnType<typeof useSession>['data']
+  isAdmin: boolean
+  onNavigate?: () => void
+}) {
   return (
-    <aside className="flex w-64 flex-col bg-gray-900 text-white">
+    <>
       {/* App title */}
       <div className="px-6 py-5">
         <h1 className="text-lg font-bold tracking-tight">
@@ -56,6 +64,7 @@ export default function Nav() {
             <Link
               key={item.href}
               href={item.href}
+              onClick={onNavigate}
               className={cn(
                 'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
                 isActive
@@ -84,6 +93,7 @@ export default function Nav() {
                 <Link
                   key={item.href}
                   href={item.href}
+                  onClick={onNavigate}
                   className={cn(
                     'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
                     isActive
@@ -112,16 +122,71 @@ export default function Nav() {
                 {session.user.email}
               </p>
             </div>
-            <button
-              onClick={() => signOut({ callbackUrl: '/login' })}
-              className="ml-2 shrink-0 rounded-md p-2 text-gray-400 transition-colors hover:bg-gray-800 hover:text-white"
-              title="Sign out"
-            >
-              <LogOut className="h-4 w-4" />
-            </button>
+            <div className="ml-2 flex shrink-0 gap-1">
+              <Link
+                href="/settings"
+                onClick={onNavigate}
+                className="rounded-md p-2 text-gray-400 transition-colors hover:bg-gray-800 hover:text-white"
+                title="Settings"
+              >
+                <Settings className="h-4 w-4" />
+              </Link>
+              <button
+                onClick={() => signOut({ callbackUrl: '/login' })}
+                className="rounded-md p-2 text-gray-400 transition-colors hover:bg-gray-800 hover:text-white"
+                title="Sign out"
+              >
+                <LogOut className="h-4 w-4" />
+              </button>
+            </div>
           </div>
         )}
       </div>
-    </aside>
+    </>
+  )
+}
+
+export default function Nav() {
+  const pathname = usePathname()
+  const { data: session } = useSession()
+  const [open, setOpen] = useState(false)
+
+  const isAdmin = session?.user?.roles?.includes('ADMIN')
+
+  const handleOpenChange = useCallback((value: boolean) => {
+    setOpen(value)
+  }, [])
+
+  return (
+    <>
+      {/* Desktop sidebar */}
+      <aside className="hidden md:flex w-64 flex-col bg-gray-900 text-white">
+        <NavContent pathname={pathname} session={session} isAdmin={!!isAdmin} />
+      </aside>
+
+      {/* Mobile top bar + sheet */}
+      <div className="flex md:hidden items-center justify-between bg-gray-900 px-4 py-3">
+        <h1 className="text-lg font-bold tracking-tight text-white">
+          Packaging Materials
+        </h1>
+        <Sheet open={open} onOpenChange={handleOpenChange}>
+          <SheetTrigger asChild>
+            <button
+              className="rounded-md p-2 text-gray-300 transition-colors hover:bg-gray-800 hover:text-white"
+              aria-label="Open menu"
+            >
+              <Menu className="h-6 w-6" />
+            </button>
+          </SheetTrigger>
+          <SheetContent
+            side="left"
+            showCloseButton={false}
+            className="w-64 border-r-0 bg-gray-900 p-0 text-white"
+          >
+            <NavContent pathname={pathname} session={session} isAdmin={!!isAdmin} onNavigate={() => setOpen(false)} />
+          </SheetContent>
+        </Sheet>
+      </div>
+    </>
   )
 }
