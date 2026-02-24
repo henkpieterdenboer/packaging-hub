@@ -2,8 +2,7 @@ import nodemailer from 'nodemailer'
 import type { Transporter } from 'nodemailer'
 import { cookies } from 'next/headers'
 import { prisma } from '@/lib/db'
-import { getServerTranslation } from '@/i18n/server'
-import type { TranslationFunction } from '@/i18n'
+import { getTranslation, type TranslationFunction } from '@/i18n'
 
 const APP_URL = process.env.APP_URL || 'http://localhost:3000'
 const DEMO_EMAIL = process.env.DEMO_EMAIL
@@ -144,7 +143,7 @@ export async function sendOrderEmail(
   const { transporter, provider } = await getTransporter()
   const demoTarget = await getDemoEmailTarget()
   const lang = options?.language || 'en'
-  const t = getServerTranslation(lang)
+  const t = getTranslation(lang)
 
   const itemRows = items
     .map(
@@ -251,7 +250,7 @@ export async function sendActivationEmail(
 ): Promise<{ etherealUrl?: string; emailLogId?: string }> {
   const { transporter, provider } = await getTransporter()
   const demoTarget = await getDemoEmailTarget()
-  const t = getServerTranslation(language || 'en')
+  const t = getTranslation(language || 'en')
   const activationUrl = `${APP_URL}/activate/${token}`
 
   let html = `
@@ -326,7 +325,7 @@ export async function sendPasswordResetEmail(
 ): Promise<{ etherealUrl?: string; emailLogId?: string }> {
   const { transporter, provider } = await getTransporter()
   const demoTarget = await getDemoEmailTarget()
-  const t = getServerTranslation(language || 'en')
+  const t = getTranslation(language || 'en')
   const resetUrl = `${APP_URL}/reset-password/${token}`
 
   let html = `
