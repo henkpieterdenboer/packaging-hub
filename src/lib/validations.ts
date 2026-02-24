@@ -87,7 +87,7 @@ export type UpdateProductTypeInput = z.infer<typeof updateProductTypeSchema>
 export const createProductSchema = z.object({
   name: z.string().min(1, 'Product name is required'),
   articleCode: z.string().min(1, 'Article code is required'),
-  supplierId: z.string().uuid('Invalid supplier ID'),
+  supplierId: z.string().min(1, 'Supplier is required'),
   productTypeId: z.string().min(1).nullable().optional(),
   unitsPerBox: z.number().int().positive().nullable().optional(),
   unitsPerPallet: z.number().int().positive().nullable().optional(),
@@ -100,7 +100,7 @@ export type CreateProductInput = z.infer<typeof createProductSchema>
 export const updateProductSchema = z.object({
   name: z.string().min(1, 'Product name is required').optional(),
   articleCode: z.string().min(1, 'Article code is required').optional(),
-  supplierId: z.string().uuid('Invalid supplier ID').optional(),
+  supplierId: z.string().min(1, 'Supplier is required').optional(),
   productTypeId: z.string().min(1).nullable().optional(),
   unitsPerBox: z.number().int().positive().nullable().optional(),
   unitsPerPallet: z.number().int().positive().nullable().optional(),
@@ -116,13 +116,13 @@ export type UpdateProductInput = z.infer<typeof updateProductSchema>
 const unitValues = Object.values(Unit) as [string, ...string[]]
 
 const orderItemSchema = z.object({
-  productId: z.string().uuid('Invalid product ID'),
+  productId: z.string().min(1, 'Product is required'),
   quantity: z.number().int().positive('Quantity must be at least 1'),
   unit: z.enum(unitValues),
 })
 
 export const createOrderSchema = z.object({
-  supplierId: z.string().uuid('Invalid supplier ID'),
+  supplierId: z.string().min(1, 'Supplier is required'),
   notes: z.string().optional(),
   items: z
     .array(orderItemSchema)
