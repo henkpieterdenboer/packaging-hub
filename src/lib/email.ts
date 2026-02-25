@@ -1,12 +1,11 @@
 import nodemailer from 'nodemailer'
 import type { Transporter } from 'nodemailer'
-import path from 'path'
 import { cookies } from 'next/headers'
 import { prisma } from '@/lib/db'
 import { getTranslation, type TranslationFunction } from '@/i18n'
+import { LOGO_BASE64 } from '@/lib/logo-data'
 
 const LOGO_CID = 'coloriginz-logo'
-const LOGO_PATH = path.join(process.cwd(), 'public/logo-transparent.png')
 
 function escapeHtml(str: string): string {
   return str
@@ -232,7 +231,7 @@ export async function sendOrderEmail(
     html,
     attachments: [{
       filename: 'logo.png',
-      path: LOGO_PATH,
+      content: Buffer.from(LOGO_BASE64, 'base64'),
       cid: LOGO_CID,
     }],
   })
