@@ -478,6 +478,7 @@
       "articleCode": "Article Code",
       "quantity": "Quantity",
       "unit": "Unit",
+      "placedByCompany": "This order has been placed on behalf of Coloriginz.",
       "notes": "Notes:",
       "footer": "This is an automated message from SupplyHub.",
       "unitLabels": {

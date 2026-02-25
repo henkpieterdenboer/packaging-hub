@@ -175,9 +175,15 @@ export async function sendOrderEmail(
 
   let html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <div style="text-align: center; margin-bottom: 24px;">
+        <!--[if mso]><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td align="center"><![endif]-->
+        <img src="${APP_URL}/logo-transparent.png" alt="Coloriginz" width="180" height="45" style="border: 0; outline: none;" />
+        <!--[if mso]></td></tr></table><![endif]-->
+      </div>
       <h2 style="color: #333;">${t('emailTemplates.order.subject', { orderNumber: escapeHtml(order.orderNumber), supplierName: safeSupplierName })}</h2>
       <p>${t('emailTemplates.order.greeting', { supplierName: safeSupplierName })}</p>
       <p>${t('emailTemplates.order.intro', { employeeName: safeEmployeeName })}</p>
+      <p>${t('emailTemplates.order.placedByCompany')}</p>
       <table style="width: 100%; border-collapse: collapse; margin-top: 16px;">
         <thead>
           <tr style="background-color: #f4f4f4;">

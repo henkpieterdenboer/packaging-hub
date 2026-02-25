@@ -478,6 +478,7 @@
       "articleCode": "Kod Artykułu",
       "quantity": "Ilość",
       "unit": "Jednostka",
+      "placedByCompany": "To zamówienie zostało złożone w imieniu Coloriginz.",
       "notes": "Uwagi:",
       "footer": "To jest automatyczna wiadomość z SupplyHub.",
       "unitLabels": {

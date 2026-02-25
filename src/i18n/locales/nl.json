@@ -478,6 +478,7 @@
       "articleCode": "Artikelcode",
       "quantity": "Aantal",
       "unit": "Eenheid",
+      "placedByCompany": "Deze bestelling is geplaatst namens Coloriginz.",
       "notes": "Opmerkingen:",
       "footer": "Dit is een automatisch bericht van SupplyHub.",
       "unitLabels": {
