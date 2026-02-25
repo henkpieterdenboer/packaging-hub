@@ -74,6 +74,8 @@ model Product {
   supplier         Supplier     @relation(fields: [supplierId], references: [id])
   productType      ProductType? @relation(fields: [productTypeId], references: [id])
   orderItems       OrderItem[]
+
+  @@index([supplierId])
 }
 
 model Order {
@@ -92,6 +94,11 @@ model Order {
   supplier     Supplier @relation(fields: [supplierId], references: [id])
   items        OrderItem[]
   emailLogs    EmailLog[]
+
+  @@index([employeeId])
+  @@index([supplierId])
+  @@index([status])
+  @@index([orderDate])
 }
 
 model OrderItem {
@@ -110,6 +117,9 @@ model OrderItem {
   product          Product  @relation(fields: [productId], references: [id])
   receivedBy       User?    @relation("ReceivedBy", fields: [receivedById], references: [id])
   returns          Return[]
+
+  @@index([orderId])
+  @@index([productId])
 }
 
 model Return {
@@ -155,4 +165,8 @@ model EmailLog {
 
   order        Order?   @relation(fields: [orderId], references: [id])
   sentBy       User?    @relation("EmailsSent", fields: [sentById], references: [id])
+
+  @@index([type])
+  @@index([sentAt])
+  @@index([sentById])
 }

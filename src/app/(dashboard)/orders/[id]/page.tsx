@@ -18,6 +18,7 @@ import {
 import { Separator } from '@/components/ui/separator'
 import { ArrowLeft } from 'lucide-react'
 import { useTranslation } from '@/i18n/use-translation'
+import { localeMap } from '@/i18n'
 
 interface OrderDetail {
   id: string
@@ -63,8 +64,6 @@ export default function OrderDetailPage() {
   const router = useRouter()
   const params = useParams<{ id: string }>()
   const { t, language } = useTranslation()
-
-  const localeMap: Record<string, string> = { en: 'en-US', nl: 'nl-NL', pl: 'pl-PL' }
 
   const [order, setOrder] = useState<OrderDetail | null>(null)
   const [loading, setLoading] = useState(true)

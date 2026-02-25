@@ -33,6 +33,8 @@ function getFlatTranslations(lang: string): Record<string, string> {
 
 export type TranslationFunction = (key: string, params?: Record<string, string | number>) => string
 
+export const localeMap: Record<string, string> = { en: 'en-US', nl: 'nl-NL', pl: 'pl-PL' }
+
 export function getTranslation(lang: LanguageType | string): TranslationFunction {
   const translations = getFlatTranslations(lang)
   const fallback = lang !== 'en' ? getFlatTranslations('en') : translations

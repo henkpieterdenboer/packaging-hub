@@ -3,6 +3,8 @@ import CredentialsProvider from 'next-auth/providers/credentials'
 import bcrypt from 'bcryptjs'
 import { prisma } from './db'
 
+const JWT_REFRESH_INTERVAL_MS = 5 * 60 * 1000 // 5 minutes
+
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
@@ -55,20 +57,26 @@ export const authOptions: NextAuthOptions = {
         token.preferredLanguage = user.preferredLanguage
       }
 
-      // Refresh roles and language from DB on every request
+      // Refresh roles and language from DB with TTL caching
       if (token.id) {
-        const dbUser = await prisma.user.findUnique({
-          where: { id: token.id as string },
-          select: { roles: true, isActive: true, preferredLanguage: true },
-        })
+        const now = Date.now()
+        const lastRefresh = (token.lastDbRefresh as number) || 0
 
-        if (!dbUser || !dbUser.isActive) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          return {} as any
+        if (now - lastRefresh > JWT_REFRESH_INTERVAL_MS) {
+          const dbUser = await prisma.user.findUnique({
+            where: { id: token.id as string },
+            select: { roles: true, isActive: true, preferredLanguage: true },
+          })
+
+          if (!dbUser || !dbUser.isActive) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            return {} as any
+          }
+
+          token.roles = dbUser.roles
+          token.preferredLanguage = dbUser.preferredLanguage
+          token.lastDbRefresh = now
         }
-
-        token.roles = dbUser.roles
-        token.preferredLanguage = dbUser.preferredLanguage
       }
 
       return token

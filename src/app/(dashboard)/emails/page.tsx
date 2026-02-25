@@ -26,9 +26,10 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { Mail, ExternalLink } from 'lucide-react'
+import { Mail, ExternalLink, Inbox } from 'lucide-react'
 import type { EmailTypeType } from '@/types'
 import { useTranslation } from '@/i18n/use-translation'
+import { localeMap } from '@/i18n'
 
 interface EmailLog {
   id: string
@@ -64,13 +65,12 @@ export default function EmailsPage() {
   const router = useRouter()
   const { t, language } = useTranslation()
 
-  const localeMap: Record<string, string> = { en: 'en-US', nl: 'nl-NL', pl: 'pl-PL' }
-
   const [emails, setEmails] = useState<EmailLog[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [typeFilter, setTypeFilter] = useState<string>('ALL')
   const [selectedEmail, setSelectedEmail] = useState<EmailLog | null>(null)
+  const [etherealInfo, setEtherealInfo] = useState<{ user: string; pass: string } | null>(null)
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -105,6 +105,23 @@ export default function EmailsPage() {
       fetchEmails()
     }
   }, [status, typeFilter])
+
+  useEffect(() => {
+    async function fetchEtherealInfo() {
+      try {
+        const res = await fetch('/api/emails/ethereal-info')
+        if (res.ok) {
+          const data = await res.json()
+          setEtherealInfo(data)
+        }
+      } catch {
+        // Not critical
+      }
+    }
+    if (status === 'authenticated') {
+      fetchEtherealInfo()
+    }
+  }, [status])
 
   if (status === 'loading') {
     return (
@@ -250,6 +267,43 @@ export default function EmailsPage() {
               ))}
             </TableBody>
           </Table>
+        </div>
+      )}
+
+      {/* Ethereal Test Inbox Info */}
+      {etherealInfo && (
+        <div className="rounded-lg border bg-blue-50 p-4">
+          <div className="flex items-start gap-3">
+            <Inbox className="mt-0.5 h-5 w-5 text-blue-600" />
+            <div className="space-y-2">
+              <h3 className="text-sm font-semibold text-blue-900">
+                {t('emails.etherealInfo')}
+              </h3>
+              <p className="text-sm text-blue-700">
+                {t('emails.etherealDescription')}
+              </p>
+              <div className="flex flex-wrap items-center gap-x-6 gap-y-1 text-sm font-mono text-blue-800">
+                <span>
+                  <span className="font-sans font-medium">{t('emails.etherealUser')}</span>{' '}
+                  {etherealInfo.user}
+                </span>
+                <span>
+                  <span className="font-sans font-medium">{t('emails.etherealPass')}</span>{' '}
+                  {etherealInfo.pass}
+                </span>
+              </div>
+              <Button variant="outline" size="sm" asChild className="mt-1">
+                <a
+                  href="https://ethereal.email/login"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  {t('emails.etherealInbox')}
+                </a>
+              </Button>
+            </div>
+          </div>
         </div>
       )}
 

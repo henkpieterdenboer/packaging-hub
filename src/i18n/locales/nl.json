@@ -269,7 +269,12 @@
     "detailStatus": "Status:",
     "detailError": "Fout:",
     "openInEthereal": "Openen in Ethereal",
-    "loadError": "E-mail logs laden mislukt. Probeer het opnieuw."
+    "loadError": "E-mail logs laden mislukt. Probeer het opnieuw.",
+    "etherealInfo": "Ethereal testinbox",
+    "etherealDescription": "Alle test-e-mails worden bezorgd in een gedeelde Ethereal inbox. Gebruik onderstaande gegevens om ze te bekijken.",
+    "etherealInbox": "Ethereal inbox openen",
+    "etherealUser": "Gebruikersnaam:",
+    "etherealPass": "Wachtwoord:"
   },
   "settings": {
     "title": "Instellingen",

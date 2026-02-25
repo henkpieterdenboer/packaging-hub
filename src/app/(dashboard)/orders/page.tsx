@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/table'
 import { Plus, Eye, ShoppingCart } from 'lucide-react'
 import { useTranslation } from '@/i18n/use-translation'
+import { localeMap } from '@/i18n'
 
 interface Order {
   id: string
@@ -64,8 +65,6 @@ function OrdersContent() {
   const searchParams = useSearchParams()
   const statusFilter = searchParams.get('status')
   const { t, language } = useTranslation()
-
-  const localeMap: Record<string, string> = { en: 'en-US', nl: 'nl-NL', pl: 'pl-PL' }
 
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)

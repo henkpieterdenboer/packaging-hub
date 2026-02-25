@@ -33,6 +33,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { useTranslation } from '@/i18n/use-translation'
+import { localeMap } from '@/i18n'
 
 interface Supplier {
   id: string
@@ -68,8 +69,6 @@ export default function ProductCatalogPage() {
   const { status } = useSession()
   const router = useRouter()
   const { t, language } = useTranslation()
-
-  const localeMap: Record<string, string> = { en: 'en-US', nl: 'nl-NL', pl: 'pl-PL' }
 
   const [products, setProducts] = useState<Product[]>([])
   const [suppliers, setSuppliers] = useState<Supplier[]>([])

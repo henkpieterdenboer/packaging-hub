@@ -20,6 +20,7 @@ import { ChevronDown, ChevronRight, PackageCheck, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import type { OrderStatusType, UnitType } from '@/types'
 import { useTranslation } from '@/i18n/use-translation'
+import { localeMap } from '@/i18n'
 
 interface Order {
   id: string
@@ -96,8 +97,6 @@ export default function ReceivingPage() {
   const { status } = useSession()
   const router = useRouter()
   const { t, language } = useTranslation()
-
-  const localeMap: Record<string, string> = { en: 'en-US', nl: 'nl-NL', pl: 'pl-PL' }
 
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)

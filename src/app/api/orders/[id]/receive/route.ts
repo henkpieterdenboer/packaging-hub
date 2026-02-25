@@ -40,6 +40,15 @@ export async function PATCH(
       )
     }
 
+    // Non-admin users can only receive their own orders
+    const isAdmin = session.user.roles.includes('ADMIN')
+    if (!isAdmin && order.employeeId !== session.user.id) {
+      return NextResponse.json(
+        { error: 'Insufficient permissions' },
+        { status: 403 },
+      )
+    }
+
     if (order.status === 'CANCELLED') {
       return NextResponse.json(
         { error: 'Cannot receive goods for a cancelled order' },

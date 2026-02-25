@@ -4,6 +4,15 @@ import { cookies } from 'next/headers'
 import { prisma } from '@/lib/db'
 import { getTranslation, type TranslationFunction } from '@/i18n'
 
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
 const APP_URL = process.env.APP_URL || 'http://localhost:3000'
 const DEMO_EMAIL = process.env.DEMO_EMAIL
 const IS_TEST_MODE = process.env.NEXT_PUBLIC_TEST_MODE === 'true'
@@ -149,23 +158,26 @@ export async function sendOrderEmail(
     .map(
       (item) => `
       <tr>
-        <td style="border: 1px solid #ddd; padding: 8px;">${item.product.name}</td>
-        <td style="border: 1px solid #ddd; padding: 8px;">${item.product.articleCode}</td>
+        <td style="border: 1px solid #ddd; padding: 8px;">${escapeHtml(item.product.name)}</td>
+        <td style="border: 1px solid #ddd; padding: 8px;">${escapeHtml(item.product.articleCode)}</td>
         <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">${item.quantity}</td>
-        <td style="border: 1px solid #ddd; padding: 8px;">${getUnitLabel(item.unit, t)}</td>
+        <td style="border: 1px solid #ddd; padding: 8px;">${escapeHtml(getUnitLabel(item.unit, t))}</td>
       </tr>`,
     )
     .join('')
 
+  const safeSupplierName = escapeHtml(supplier.name)
+  const safeEmployeeName = escapeHtml(`${employee.firstName} ${employee.lastName}`)
+
   const notesSection = order.notes
-    ? `<p style="margin-top: 16px;"><strong>${t('emailTemplates.order.notes')}</strong> ${order.notes}</p>`
+    ? `<p style="margin-top: 16px;"><strong>${t('emailTemplates.order.notes')}</strong> ${escapeHtml(order.notes)}</p>`
     : ''
 
   let html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <h2 style="color: #333;">${t('emailTemplates.order.subject', { orderNumber: order.orderNumber, supplierName: supplier.name })}</h2>
-      <p>${t('emailTemplates.order.greeting', { supplierName: supplier.name })}</p>
-      <p>${t('emailTemplates.order.intro', { employeeName: `${employee.firstName} ${employee.lastName}` })}</p>
+      <h2 style="color: #333;">${t('emailTemplates.order.subject', { orderNumber: escapeHtml(order.orderNumber), supplierName: safeSupplierName })}</h2>
+      <p>${t('emailTemplates.order.greeting', { supplierName: safeSupplierName })}</p>
+      <p>${t('emailTemplates.order.intro', { employeeName: safeEmployeeName })}</p>
       <table style="width: 100%; border-collapse: collapse; margin-top: 16px;">
         <thead>
           <tr style="background-color: #f4f4f4;">
@@ -251,12 +263,13 @@ export async function sendActivationEmail(
   const { transporter, provider } = await getTransporter()
   const demoTarget = await getDemoEmailTarget()
   const t = getTranslation(language || 'en')
-  const activationUrl = `${APP_URL}/activate/${token}`
+  const activationUrl = `${APP_URL}/activate/${encodeURIComponent(token)}`
+  const safeFirstName = escapeHtml(firstName)
 
   let html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
       <h2 style="color: #333;">${t('emailTemplates.activation.title')}</h2>
-      <p>${t('emailTemplates.activation.greeting', { firstName })}</p>
+      <p>${t('emailTemplates.activation.greeting', { firstName: safeFirstName })}</p>
       <p>${t('emailTemplates.activation.intro')}</p>
       <div style="text-align: center; margin: 32px 0;">
         <a href="${activationUrl}" style="background-color: #0070f3; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
@@ -326,12 +339,13 @@ export async function sendPasswordResetEmail(
   const { transporter, provider } = await getTransporter()
   const demoTarget = await getDemoEmailTarget()
   const t = getTranslation(language || 'en')
-  const resetUrl = `${APP_URL}/reset-password/${token}`
+  const resetUrl = `${APP_URL}/reset-password/${encodeURIComponent(token)}`
+  const safeFirstName = escapeHtml(firstName)
 
   let html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
       <h2 style="color: #333;">${t('emailTemplates.passwordReset.title')}</h2>
-      <p>${t('emailTemplates.passwordReset.greeting', { firstName })}</p>
+      <p>${t('emailTemplates.passwordReset.greeting', { firstName: safeFirstName })}</p>
       <p>${t('emailTemplates.passwordReset.intro')}</p>
       <div style="text-align: center; margin: 32px 0;">
         <a href="${resetUrl}" style="background-color: #0070f3; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">

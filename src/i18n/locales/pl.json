@@ -269,7 +269,12 @@
     "detailStatus": "Status:",
     "detailError": "Błąd:",
     "openInEthereal": "Otwórz w Ethereal",
-    "loadError": "Nie udało się załadować dziennika e-maili. Spróbuj ponownie."
+    "loadError": "Nie udało się załadować dziennika e-maili. Spróbuj ponownie.",
+    "etherealInfo": "Skrzynka testowa Ethereal",
+    "etherealDescription": "Wszystkie testowe e-maile są dostarczane do wspólnej skrzynki Ethereal. Użyj poniższych danych, aby je wyświetlić.",
+    "etherealInbox": "Otwórz skrzynkę Ethereal",
+    "etherealUser": "Nazwa użytkownika:",
+    "etherealPass": "Hasło:"
   },
   "settings": {
     "title": "Ustawienia",

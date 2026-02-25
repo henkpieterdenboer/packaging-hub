@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { EmailType } from '@/types'
+
+const validEmailTypes: Set<string> = new Set(Object.values(EmailType))
 
 export async function GET(request: Request) {
   try {
@@ -17,7 +20,7 @@ export async function GET(request: Request) {
 
     const where: Record<string, unknown> = {}
     if (!isAdmin) where.sentById = session.user.id
-    if (type) where.type = type
+    if (type && validEmailTypes.has(type)) where.type = type
     if (orderId) where.orderId = orderId
 
     const emails = await prisma.emailLog.findMany({

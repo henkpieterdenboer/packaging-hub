@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useCallback, useMemo, useState } from 'react'
+import { createContext, useCallback, useEffect, useMemo, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { getTranslation, type TranslationFunction } from '@/i18n'
 import type { LanguageType } from '@/types'
@@ -31,6 +31,12 @@ function getInitialLanguage(sessionLang?: string): LanguageType {
   return 'en'
 }
 
+function useSyncHtmlLang(lang: string) {
+  useEffect(() => {
+    document.documentElement.lang = lang
+  }, [lang])
+}
+
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const { data: session, update: updateSession } = useSession()
   const [language, setLanguageState] = useState<LanguageType>(
@@ -38,12 +44,18 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   )
 
   // Sync language from session when it changes (e.g. after login)
+  // This is the React-documented "adjusting state during rendering" pattern.
+  // The `!== language` guard prevents infinite re-renders.
+  // See: https://react.dev/reference/react/useState#storing-information-from-previous-renders
   const sessionLang = session?.user?.preferredLanguage
   if (sessionLang && ['en', 'nl', 'pl'].includes(sessionLang) && sessionLang !== language) {
     setLanguageState(sessionLang as LanguageType)
   }
 
   const t = useMemo(() => getTranslation(language), [language])
+
+  // Keep <html lang> in sync — runs as a side effect after render
+  useSyncHtmlLang(language)
 
   const setLanguage = useCallback(async (lang: LanguageType) => {
     setLanguageState(lang)

@@ -5,6 +5,9 @@ import { prisma } from '@/lib/db'
 import { createOrderSchema } from '@/lib/validations'
 import { generateOrderNumber } from '@/lib/order-utils'
 import { sendOrderEmail } from '@/lib/email'
+import { OrderStatus } from '@/types'
+
+const validStatuses: Set<string> = new Set(Object.values(OrderStatus))
 
 export async function GET(request: Request) {
   try {
@@ -29,7 +32,7 @@ export async function GET(request: Request) {
 
     if (receivable === 'true') {
       whereClause.status = { in: ['PENDING', 'PARTIALLY_RECEIVED'] }
-    } else if (statusFilter) {
+    } else if (statusFilter && validStatuses.has(statusFilter)) {
       whereClause.status = statusFilter
     }
 
@@ -111,10 +114,9 @@ export async function POST(request: Request) {
       )
     }
 
-    const orderNumber = await generateOrderNumber()
-
-    // Create order with items in a transaction
+    // Create order with items in a transaction (order number generated inside tx to prevent race conditions)
     const order = await prisma.$transaction(async (tx) => {
+      const orderNumber = await generateOrderNumber(tx)
       const createdOrder = await tx.order.create({
         data: {
           orderNumber,
@@ -141,6 +143,16 @@ export async function POST(request: Request) {
           employee: {
             select: { firstName: true, lastName: true },
           },
+        },
+      })
+
+      // Audit log
+      await tx.auditLog.create({
+        data: {
+          userId: session.user.id,
+          action: 'ORDER_PLACED',
+          entityType: 'Order',
+          entityId: createdOrder.id,
         },
       })
 
