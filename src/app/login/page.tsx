@@ -133,7 +133,7 @@ export default function LoginPage() {
               <button
                 type="button"
                 className="flex w-full items-center justify-between rounded-md px-2 py-1.5 hover:bg-muted transition-colors text-left"
-                onClick={() => { setEmail('admin@example.com'); setPassword('admin123') }}
+                onClick={() => { setEmail('admin@example.com'); setPassword('Welkom01') }}
               >
                 <span className="font-medium">{t('auth.demoAdmin')}</span>
                 <span className="text-muted-foreground">admin@example.com</span>
@@ -141,7 +141,7 @@ export default function LoginPage() {
               <button
                 type="button"
                 className="flex w-full items-center justify-between rounded-md px-2 py-1.5 hover:bg-muted transition-colors text-left"
-                onClick={() => { setEmail('employee@example.com'); setPassword('employee123') }}
+                onClick={() => { setEmail('employee@example.com'); setPassword('Welkom02') }}
               >
                 <span className="font-medium">{t('auth.demoEmployee')}</span>
                 <span className="text-muted-foreground">employee@example.com</span>

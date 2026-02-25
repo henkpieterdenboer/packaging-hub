@@ -38,18 +38,25 @@ function useSyncHtmlLang(lang: string) {
 }
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const { data: session, update: updateSession } = useSession()
+  const { data: session } = useSession()
   const [language, setLanguageState] = useState<LanguageType>(
     () => getInitialLanguage(session?.user?.preferredLanguage)
   )
 
-  // Sync language from session when it changes (e.g. after login)
-  // This is the React-documented "adjusting state during rendering" pattern.
-  // The `!== language` guard prevents infinite re-renders.
-  // See: https://react.dev/reference/react/useState#storing-information-from-previous-renders
+  // Only sync language from session on login/logout (when userId changes),
+  // not on every render — otherwise it overrides the user's explicit choice.
+  const [prevUserId, setPrevUserId] = useState<string | null>(null)
+  const userId = session?.user?.id ?? null
   const sessionLang = session?.user?.preferredLanguage
-  if (sessionLang && ['en', 'nl', 'pl'].includes(sessionLang) && sessionLang !== language) {
-    setLanguageState(sessionLang as LanguageType)
+
+  if (userId && userId !== prevUserId) {
+    setPrevUserId(userId)
+    if (sessionLang && ['en', 'nl', 'pl'].includes(sessionLang)) {
+      setLanguageState(sessionLang as LanguageType)
+    }
+  }
+  if (!userId && prevUserId) {
+    setPrevUserId(null)
   }
 
   const t = useMemo(() => getTranslation(language), [language])
@@ -59,10 +66,10 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
   const setLanguage = useCallback(async (lang: LanguageType) => {
     setLanguageState(lang)
-    // Set cookie for unauthenticated pages
+    // Set cookie for all pages (including unauthenticated)
     document.cookie = `preferred-language=${lang}; path=/; max-age=${365 * 24 * 60 * 60}; SameSite=Lax`
 
-    // Update DB if authenticated
+    // Update DB if authenticated (fire-and-forget, no session refresh needed)
     if (session?.user) {
       try {
         await fetch('/api/auth/language', {
@@ -70,12 +77,11 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ language: lang }),
         })
-        await updateSession()
       } catch (error) {
         console.error('[i18n] Failed to update language:', error)
       }
     }
-  }, [session?.user, updateSession])
+  }, [session?.user])
 
   const value = useMemo(
     () => ({ language, t, setLanguage }),

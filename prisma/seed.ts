@@ -9,7 +9,7 @@ async function main() {
   console.log('Seeding database...')
 
   // Create admin user
-  const adminPassword = await bcrypt.hash('admin123', 10)
+  const adminPassword = await bcrypt.hash('Welkom01', 10)
   const admin = await prisma.user.upsert({
     where: { email: 'admin@example.com' },
     update: {},
@@ -26,7 +26,7 @@ async function main() {
   console.log(`Created admin: ${admin.email}`)
 
   // Create demo employee
-  const employeePassword = await bcrypt.hash('employee123', 10)
+  const employeePassword = await bcrypt.hash('Welkom02', 10)
   const employee = await prisma.user.upsert({
     where: { email: 'employee@example.com' },
     update: {},
@@ -153,8 +153,8 @@ async function main() {
 
   console.log('\nSeed completed!')
   console.log('\nDemo accounts:')
-  console.log('  Admin:    admin@example.com / admin123')
-  console.log('  Employee: employee@example.com / employee123')
+  console.log('  Admin:    admin@example.com / Welkom01')
+  console.log('  Employee: employee@example.com / Welkom02')
 }
 
 main()
