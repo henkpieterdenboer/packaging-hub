@@ -6,6 +6,11 @@ import { getTranslation, type TranslationFunction } from '@/i18n'
 import { LOGO_BASE64 } from '@/lib/logo-data'
 
 const LOGO_CID = 'coloriginz-logo'
+const LOGO_DATA_URI = `data:image/png;base64,${LOGO_BASE64}`
+
+function htmlForStorage(html: string): string {
+  return html.replace(`cid:${LOGO_CID}`, LOGO_DATA_URI)
+}
 
 function escapeHtml(str: string): string {
   return str
@@ -256,7 +261,7 @@ export async function sendOrderEmail(
         sentById: options?.sentById,
         provider,
         etherealUrl: etherealUrl || null,
-        htmlBody: html,
+        htmlBody: htmlForStorage(html),
         status: 'SENT',
       },
     })
@@ -333,7 +338,7 @@ export async function sendActivationEmail(
         sentById,
         provider,
         etherealUrl: etherealUrl || null,
-        htmlBody: html,
+        htmlBody: htmlForStorage(html),
         status: 'SENT',
       },
     })
@@ -410,7 +415,7 @@ export async function sendPasswordResetEmail(
         sentById,
         provider,
         etherealUrl: etherealUrl || null,
-        htmlBody: html,
+        htmlBody: htmlForStorage(html),
         status: 'SENT',
       },
     })
