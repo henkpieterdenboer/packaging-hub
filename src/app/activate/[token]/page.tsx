@@ -3,7 +3,8 @@
 import { useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import { CheckCircle, Package } from 'lucide-react'
+import { CheckCircle } from 'lucide-react'
+import { SupplyHubLogo } from '@/components/supply-hub-logo'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -90,8 +91,8 @@ export default function ActivatePage() {
     <div className="flex min-h-screen items-center justify-center bg-muted/40 px-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-lg bg-primary">
-            <Package className="h-6 w-6 text-primary-foreground" />
+          <div className="mx-auto mb-2">
+            <SupplyHubLogo size={48} />
           </div>
           <CardTitle className="text-2xl">{t('activate.title')}</CardTitle>
           <CardDescription>

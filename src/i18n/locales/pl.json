@@ -43,7 +43,7 @@
     "of": "z"
   },
   "nav": {
-    "appTitle": "Materiały Opakowaniowe",
+    "appTitle": "SupplyHub",
     "dashboard": "Panel",
     "products": "Produkty",
     "orders": "Zamówienia",
@@ -120,7 +120,7 @@
   },
   "dashboard": {
     "welcome": "Witaj ponownie, {{firstName}}!",
-    "subtitle": "Oto przegląd Twojego stanu materiałów opakowaniowych.",
+    "subtitle": "Oto przegląd Twoich zamówień i zapasów.",
     "totalOrders": "Łączne Zamówienia",
     "totalOrdersDesc": "Wszystkie złożone zamówienia",
     "pendingOrders": "Zamówienia Oczekujące",
@@ -137,7 +137,7 @@
   },
   "orders": {
     "title": "Zamówienia",
-    "subtitle": "Przeglądaj i zarządzaj zamówieniami materiałów opakowaniowych.",
+    "subtitle": "Przeglądaj i zarządzaj swoimi zamówieniami.",
     "newOrder": "Nowe Zamówienie",
     "loadingOrders": "Ładowanie zamówień...",
     "noOrders": "Brak zamówień",
@@ -224,7 +224,7 @@
   },
   "products": {
     "title": "Katalog Produktów",
-    "subtitle": "Przeglądaj dostępne materiały opakowaniowe od wszystkich dostawców.",
+    "subtitle": "Przeglądaj dostępne produkty od wszystkich dostawców.",
     "searchPlaceholder": "Szukaj po nazwie lub kodzie artykułu...",
     "loadingProducts": "Ładowanie produktów...",
     "noProductsFound": "Nie znaleziono produktów",
@@ -478,7 +478,7 @@
       "quantity": "Ilość",
       "unit": "Jednostka",
       "notes": "Uwagi:",
-      "footer": "To jest automatyczna wiadomość z systemu zamawiania materiałów opakowaniowych.",
+      "footer": "To jest automatyczna wiadomość z SupplyHub.",
       "unitLabels": {
         "PIECE": "Sztuka/Sztuki",
         "BOX": "Karton(y)",
@@ -489,7 +489,7 @@
       "subject": "Aktywuj Swoje Konto",
       "title": "Aktywuj Swoje Konto",
       "greeting": "Witaj {{firstName}},",
-      "intro": "Zostało utworzone dla Ciebie konto w systemie zamawiania materiałów opakowaniowych. Kliknij poniższy przycisk, aby ustawić hasło i aktywować konto.",
+      "intro": "Zostało utworzone dla Ciebie konto w SupplyHub. Kliknij poniższy przycisk, aby ustawić hasło i aktywować konto.",
       "button": "Aktywuj Konto",
       "linkHint": "Jeśli przycisk nie działa, skopiuj i wklej ten link do przeglądarki:",
       "expiry": "Ten link wygaśnie za 48 godzin. Jeśli nie oczekiwałeś tego e-maila, możesz go bezpiecznie zignorować."

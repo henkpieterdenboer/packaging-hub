@@ -43,7 +43,7 @@
     "of": "van"
   },
   "nav": {
-    "appTitle": "Verpakkingsmaterialen",
+    "appTitle": "SupplyHub",
     "dashboard": "Dashboard",
     "products": "Producten",
     "orders": "Bestellingen",
@@ -120,7 +120,7 @@
   },
   "dashboard": {
     "welcome": "Welkom terug, {{firstName}}!",
-    "subtitle": "Hier is een overzicht van uw verpakkingsmaterialen voorraad.",
+    "subtitle": "Hier is een overzicht van uw bestellingen en voorraad.",
     "totalOrders": "Totaal Bestellingen",
     "totalOrdersDesc": "Alle bestellingen ooit geplaatst",
     "pendingOrders": "Openstaande Bestellingen",
@@ -137,7 +137,7 @@
   },
   "orders": {
     "title": "Bestellingen",
-    "subtitle": "Bekijk en beheer uw bestellingen voor verpakkingsmaterialen.",
+    "subtitle": "Bekijk en beheer uw bestellingen.",
     "newOrder": "Nieuwe Bestelling",
     "loadingOrders": "Bestellingen laden...",
     "noOrders": "Nog geen bestellingen",
@@ -224,7 +224,7 @@
   },
   "products": {
     "title": "Productcatalogus",
-    "subtitle": "Blader door beschikbare verpakkingsmaterialen van alle leveranciers.",
+    "subtitle": "Blader door beschikbare producten van alle leveranciers.",
     "searchPlaceholder": "Zoek op naam of artikelcode...",
     "loadingProducts": "Producten laden...",
     "noProductsFound": "Geen producten gevonden",
@@ -478,7 +478,7 @@
       "quantity": "Aantal",
       "unit": "Eenheid",
       "notes": "Opmerkingen:",
-      "footer": "Dit is een automatisch bericht van het verpakkingsmaterialen bestelsysteem.",
+      "footer": "Dit is een automatisch bericht van SupplyHub.",
       "unitLabels": {
         "PIECE": "Stuk(s)",
         "BOX": "Doos/Dozen",
@@ -489,7 +489,7 @@
       "subject": "Activeer Uw Account",
       "title": "Activeer Uw Account",
       "greeting": "Hallo {{firstName}},",
-      "intro": "Er is een account voor u aangemaakt in het verpakkingsmaterialen bestelsysteem. Klik op de onderstaande knop om uw wachtwoord in te stellen en uw account te activeren.",
+      "intro": "Er is een account voor u aangemaakt in SupplyHub. Klik op de onderstaande knop om uw wachtwoord in te stellen en uw account te activeren.",
       "button": "Account Activeren",
       "linkHint": "Als de knop niet werkt, kopieer en plak deze link in uw browser:",
       "expiry": "Deze link verloopt na 48 uur. Als u dit e-mailbericht niet verwachtte, kunt u het veilig negeren."

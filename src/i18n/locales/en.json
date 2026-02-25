@@ -43,7 +43,7 @@
     "of": "of"
   },
   "nav": {
-    "appTitle": "Packaging Materials",
+    "appTitle": "SupplyHub",
     "dashboard": "Dashboard",
     "products": "Products",
     "orders": "Orders",
@@ -120,7 +120,7 @@
   },
   "dashboard": {
     "welcome": "Welcome back, {{firstName}}!",
-    "subtitle": "Here is an overview of your packaging materials inventory.",
+    "subtitle": "Here is an overview of your supply orders and inventory.",
     "totalOrders": "Total Orders",
     "totalOrdersDesc": "All time orders placed",
     "pendingOrders": "Pending Orders",
@@ -137,7 +137,7 @@
   },
   "orders": {
     "title": "Orders",
-    "subtitle": "View and manage your packaging material orders.",
+    "subtitle": "View and manage your supply orders.",
     "newOrder": "New Order",
     "loadingOrders": "Loading orders...",
     "noOrders": "No orders yet",
@@ -224,7 +224,7 @@
   },
   "products": {
     "title": "Product Catalog",
-    "subtitle": "Browse available packaging materials from all suppliers.",
+    "subtitle": "Browse available products from all suppliers.",
     "searchPlaceholder": "Search by name or article code...",
     "loadingProducts": "Loading products...",
     "noProductsFound": "No products found",
@@ -478,7 +478,7 @@
       "quantity": "Quantity",
       "unit": "Unit",
       "notes": "Notes:",
-      "footer": "This is an automated message from the packaging materials ordering system.",
+      "footer": "This is an automated message from SupplyHub.",
       "unitLabels": {
         "PIECE": "Piece(s)",
         "BOX": "Box(es)",
@@ -489,7 +489,7 @@
       "subject": "Activate Your Account",
       "title": "Activate Your Account",
       "greeting": "Hello {{firstName}},",
-      "intro": "An account has been created for you in the packaging materials ordering system. Please click the button below to set your password and activate your account.",
+      "intro": "An account has been created for you in SupplyHub. Please click the button below to set your password and activate your account.",
       "button": "Activate Account",
       "linkHint": "If the button does not work, copy and paste this link into your browser:",
       "expiry": "This link will expire in 48 hours. If you did not expect this email, you can safely ignore it."

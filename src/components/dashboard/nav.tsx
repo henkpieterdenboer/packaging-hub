@@ -22,6 +22,7 @@ import { Separator } from '@/components/ui/separator'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { cn } from '@/lib/utils'
 import { useTranslation } from '@/i18n/use-translation'
+import { SupplyHubLogo } from '@/components/supply-hub-logo'
 import { LanguageSwitcher } from '@/i18n/language-switcher'
 
 function NavContent({ pathname, session, isAdmin, onNavigate }: {
@@ -51,9 +52,12 @@ function NavContent({ pathname, session, isAdmin, onNavigate }: {
     <>
       {/* App title */}
       <div className="px-6 py-5">
-        <h1 className="text-lg font-bold tracking-tight">
-          {t('nav.appTitle')}
-        </h1>
+        <div className="flex items-center gap-2.5">
+          <SupplyHubLogo size={28} />
+          <h1 className="text-lg font-bold tracking-tight">
+            {t('nav.appTitle')}
+          </h1>
+        </div>
       </div>
 
       {/* Main navigation */}
@@ -174,9 +178,12 @@ export default function Nav() {
 
       {/* Mobile top bar + sheet */}
       <div className="flex md:hidden items-center justify-between bg-gray-900 px-4 py-3">
-        <h1 className="text-lg font-bold tracking-tight text-white">
-          {t('nav.appTitle')}
-        </h1>
+        <div className="flex items-center gap-2.5">
+          <SupplyHubLogo size={24} />
+          <h1 className="text-lg font-bold tracking-tight text-white">
+            {t('nav.appTitle')}
+          </h1>
+        </div>
         <Sheet open={open} onOpenChange={handleOpenChange}>
           <SheetTrigger asChild>
             <button

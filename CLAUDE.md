@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Packaging Materials Ordering System — employees browse a product catalog, place orders for packaging materials, and the system automatically emails suppliers. Admins manage employees, suppliers, and products. The system includes goods receiving, email logging, and a responsive mobile interface.
+SupplyHub — employees browse a product catalog, place orders for supplies, and the system automatically emails suppliers. Admins manage employees, suppliers, and products. The system includes goods receiving, email logging, and a responsive mobile interface.
 
 UI is in **English**, code (variables, comments) in **English**.
 

@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { signIn, useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Package } from 'lucide-react'
+import { SupplyHubLogo } from '@/components/supply-hub-logo'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -74,8 +74,8 @@ export default function LoginPage() {
           <div className="absolute right-4 top-4">
             <LanguageSwitcher variant="auth" />
           </div>
-          <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-lg bg-primary">
-            <Package className="h-6 w-6 text-primary-foreground" />
+          <div className="mx-auto mb-2">
+            <SupplyHubLogo size={48} />
           </div>
           <CardTitle className="text-2xl">{t('nav.appTitle')}</CardTitle>
           <CardDescription>{t('auth.signInTitle')}</CardDescription>

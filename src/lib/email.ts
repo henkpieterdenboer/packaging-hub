@@ -215,7 +215,7 @@ export async function sendOrderEmail(
   }
 
   const info = await transporter.sendMail({
-    from: process.env.MAIL_FROM || '"Packaging Orders" <orders@example.com>',
+    from: process.env.MAIL_FROM || '"SupplyHub" <orders@example.com>',
     to: actualTo,
     cc: ccList,
     subject,
@@ -293,7 +293,7 @@ export async function sendActivationEmail(
   }
 
   const info = await transporter.sendMail({
-    from: process.env.MAIL_FROM || '"Packaging Orders" <orders@example.com>',
+    from: process.env.MAIL_FROM || '"SupplyHub" <orders@example.com>',
     to: actualTo,
     subject,
     html,
@@ -369,7 +369,7 @@ export async function sendPasswordResetEmail(
   }
 
   const info = await transporter.sendMail({
-    from: process.env.MAIL_FROM || '"Packaging Orders" <orders@example.com>',
+    from: process.env.MAIL_FROM || '"SupplyHub" <orders@example.com>',
     to: actualTo,
     subject,
     html,

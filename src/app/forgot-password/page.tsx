@@ -2,7 +2,8 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Mail, Package } from 'lucide-react'
+import { ArrowLeft, Mail } from 'lucide-react'
+import { SupplyHubLogo } from '@/components/supply-hub-logo'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -89,8 +90,8 @@ export default function ForgotPasswordPage() {
     <div className="flex min-h-screen items-center justify-center bg-muted/40 px-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-lg bg-primary">
-            <Package className="h-6 w-6 text-primary-foreground" />
+          <div className="mx-auto mb-2">
+            <SupplyHubLogo size={48} />
           </div>
           <CardTitle className="text-2xl">{t('forgotPassword.title')}</CardTitle>
           <CardDescription>

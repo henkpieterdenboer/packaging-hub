@@ -17,8 +17,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Packaging Materials System",
-  description: "Packaging materials ordering and inventory management",
+  title: "SupplyHub",
+  description: "Supply ordering and inventory management",
 };
 
 export default function RootLayout({
