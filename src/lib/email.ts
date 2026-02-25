@@ -1,8 +1,12 @@
 import nodemailer from 'nodemailer'
 import type { Transporter } from 'nodemailer'
+import path from 'path'
 import { cookies } from 'next/headers'
 import { prisma } from '@/lib/db'
 import { getTranslation, type TranslationFunction } from '@/i18n'
+
+const LOGO_CID = 'coloriginz-logo'
+const LOGO_PATH = path.join(process.cwd(), 'public/logo-transparent.png')
 
 function escapeHtml(str: string): string {
   return str
@@ -177,7 +181,7 @@ export async function sendOrderEmail(
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
       <div style="text-align: center; margin-bottom: 24px;">
         <!--[if mso]><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td align="center"><![endif]-->
-        <img src="${APP_URL}/logo-transparent.png" alt="Coloriginz" width="180" height="45" style="border: 0; outline: none;" />
+        <img src="cid:${LOGO_CID}" alt="Coloriginz" width="180" height="45" style="border: 0; outline: none;" />
         <!--[if mso]></td></tr></table><![endif]-->
       </div>
       <h2 style="color: #333;">${t('emailTemplates.order.subject', { orderNumber: escapeHtml(order.orderNumber), supplierName: safeSupplierName })}</h2>
@@ -226,6 +230,11 @@ export async function sendOrderEmail(
     cc: ccList,
     subject,
     html,
+    attachments: [{
+      filename: 'logo.png',
+      path: LOGO_PATH,
+      cid: LOGO_CID,
+    }],
   })
 
   let etherealUrl: string | undefined
