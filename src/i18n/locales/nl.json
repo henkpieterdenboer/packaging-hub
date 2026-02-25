@@ -269,6 +269,7 @@
     "detailStatus": "Status:",
     "detailError": "Fout:",
     "openInEthereal": "Openen in Ethereal",
+    "emailPreview": "E-mail voorbeeld",
     "loadError": "E-mail logs laden mislukt. Probeer het opnieuw.",
     "etherealInfo": "Ethereal testinbox",
     "etherealDescription": "Alle test-e-mails worden bezorgd in een gedeelde Ethereal inbox. Gebruik onderstaande gegevens om ze te bekijken.",

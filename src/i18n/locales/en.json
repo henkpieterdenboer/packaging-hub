@@ -269,6 +269,7 @@
     "detailStatus": "Status:",
     "detailError": "Error:",
     "openInEthereal": "Open in Ethereal",
+    "emailPreview": "Email Preview",
     "loadError": "Failed to load email logs. Please try again.",
     "etherealInfo": "Ethereal Test Inbox",
     "etherealDescription": "All test emails are delivered to a shared Ethereal inbox. Use the credentials below to view them.",

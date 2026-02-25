@@ -159,6 +159,7 @@ model EmailLog {
   sentAt       DateTime @default(now())
   provider     String
   etherealUrl  String?
+  htmlBody     String?
   status       String   @default("SENT")
   errorMessage String?
   createdAt    DateTime @default(now())

@@ -242,6 +242,7 @@ export async function sendOrderEmail(
         sentById: options?.sentById,
         provider,
         etherealUrl: etherealUrl || null,
+        htmlBody: html,
         status: 'SENT',
       },
     })
@@ -318,6 +319,7 @@ export async function sendActivationEmail(
         sentById,
         provider,
         etherealUrl: etherealUrl || null,
+        htmlBody: html,
         status: 'SENT',
       },
     })
@@ -394,6 +396,7 @@ export async function sendPasswordResetEmail(
         sentById,
         provider,
         etherealUrl: etherealUrl || null,
+        htmlBody: html,
         status: 'SENT',
       },
     })

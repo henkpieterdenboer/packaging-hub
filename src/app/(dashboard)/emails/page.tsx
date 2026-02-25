@@ -44,6 +44,7 @@ interface EmailLog {
   etherealUrl: string | null
   status: string
   errorMessage: string | null
+  htmlBody: string | null
   createdAt: string
   order: { orderNumber: string } | null
   sentBy: { firstName: string; lastName: string } | null
@@ -314,7 +315,7 @@ export default function EmailsPage() {
           if (!open) setSelectedEmail(null)
         }}
       >
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="sm:max-w-3xl">
           <DialogHeader>
             <DialogTitle>{t('emails.detailTitle')}</DialogTitle>
           </DialogHeader>
@@ -401,7 +402,22 @@ export default function EmailsPage() {
                 )}
               </div>
 
-              {selectedEmail.etherealUrl && (
+              {selectedEmail.htmlBody && (
+                <div className="pt-2">
+                  <p className="text-sm font-medium text-gray-500 mb-2">{t('emails.emailPreview')}</p>
+                  <div className="rounded-md border bg-white">
+                    <iframe
+                      srcDoc={selectedEmail.htmlBody}
+                      sandbox=""
+                      className="w-full border-0"
+                      style={{ minHeight: '300px' }}
+                      title={t('emails.emailPreview')}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {!selectedEmail.htmlBody && selectedEmail.etherealUrl && (
                 <div className="pt-2">
                   <Button variant="outline" size="sm" asChild>
                     <a
