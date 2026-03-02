@@ -183,8 +183,16 @@ Use `@/*` for all imports from `src/`.
 ## Environments
 
 - **Local dev**: `LOCAL_DB=true`, local PostgreSQL, Ethereal email
-- **Preview/Test**: `develop` branch → Vercel Preview, Neon test DB
-- **Production**: `main` branch → Vercel Production, Neon prod DB
+- **Preview/Test**: `develop` branch → Vercel Preview, Neon `dev` branch (`ep-still-credit-agvj8t0c`)
+- **Production**: `main` branch → Vercel Production, Neon `main` branch (`ep-orange-river-agk5l5ep`)
+
+### Neon Database Branching
+
+Single Neon project with two branches (same project, separate connection strings):
+- `main` branch = production database
+- `dev` branch = test/preview database
+
+Schema changes must be applied to **both** branches separately via `prisma db push` (no merge mechanism in Neon). The `dev` branch can be reset to production state if needed.
 
 ## Git Workflow
 
