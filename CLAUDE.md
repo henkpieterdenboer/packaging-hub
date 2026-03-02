@@ -221,5 +221,5 @@ See `.env.example`. Key variables:
 
 ## Demo Accounts (after seeding)
 
-- Admin: `admin@example.com` / `admin123`
-- Employee: `employee@example.com` / `employee123`
+- Admin: `admin@example.com` / `Welkom01`
+- Employee: `employee@example.com` / `Welkom02`
