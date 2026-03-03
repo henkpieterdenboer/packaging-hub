@@ -227,6 +227,9 @@ export async function sendOrderEmail(
         </tbody>
       </table>
       ${notesSection}
+      <p style="margin-top: 16px; padding: 10px; background-color: #fffbeb; border: 1px solid #fde68a; border-radius: 4px; font-size: 13px; color: #92400e;">
+        <strong>${t('emailTemplates.order.orderNumberNote', { orderNumber: escapeHtml(order.orderNumber) })}</strong>
+      </p>
       <p style="margin-top: 24px; color: #666; font-size: 12px;">
         ${t('emailTemplates.order.footer')}
       </p>

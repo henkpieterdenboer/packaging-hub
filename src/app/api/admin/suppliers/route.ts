@@ -65,14 +65,13 @@ export async function POST(request: Request) {
       )
     }
 
-    const { name, email, ccEmails, articleGroup, language } = parsed.data
+    const { name, email, ccEmails, language } = parsed.data
 
     const supplier = await prisma.supplier.create({
       data: {
         name,
         email,
         ccEmails: ccEmails ?? [],
-        articleGroup,
         language: language ?? 'en',
       },
     })

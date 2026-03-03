@@ -37,7 +37,6 @@ model Supplier {
   name         String
   email        String
   ccEmails     String[] @default([])
-  articleGroup String
   language     String   @default("en")
   isActive     Boolean  @default(true)
   createdAt    DateTime @default(now())

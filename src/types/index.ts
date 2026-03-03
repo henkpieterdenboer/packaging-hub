@@ -48,26 +48,6 @@ export const UnitLabels: Record<UnitType, string> = {
   PALLET: 'Pallet',
 }
 
-// ─── Article Group ───────────────────────────────────────────────────────────
-
-export const ArticleGroup = {
-  PACKAGING: 'PACKAGING',
-  LABELS: 'LABELS',
-  TAPE: 'TAPE',
-  PALLETS: 'PALLETS',
-  OTHER: 'OTHER',
-} as const
-
-export type ArticleGroupType = (typeof ArticleGroup)[keyof typeof ArticleGroup]
-
-export const ArticleGroupLabels: Record<ArticleGroupType, string> = {
-  PACKAGING: 'Packaging',
-  LABELS: 'Labels',
-  TAPE: 'Tape',
-  PALLETS: 'Pallets',
-  OTHER: 'Other',
-}
-
 // ─── Email Type ──────────────────────────────────────────────────────────────
 
 export const EmailType = {

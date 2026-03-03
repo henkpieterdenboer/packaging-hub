@@ -51,7 +51,6 @@ async function main() {
       name: 'PackRight B.V.',
       email: 'orders@packright.nl',
       ccEmails: ['sales@packright.nl'],
-      articleGroup: 'PACKAGING',
       language: 'nl',
     },
   })
@@ -63,7 +62,6 @@ async function main() {
       id: 'seed-supplier-2',
       name: 'LabelPro International',
       email: 'info@labelpro.com',
-      articleGroup: 'LABELS',
       language: 'en',
     },
   })
@@ -75,7 +73,6 @@ async function main() {
       id: 'seed-supplier-3',
       name: 'TapeMasters GmbH',
       email: 'bestellungen@tapemasters.de',
-      articleGroup: 'TAPE',
       language: 'en',
     },
   })
@@ -88,7 +85,6 @@ async function main() {
       name: 'Euro Pallets Co.',
       email: 'orders@europallets.eu',
       ccEmails: ['logistics@europallets.eu'],
-      articleGroup: 'PALLETS',
       language: 'pl',
     },
   })

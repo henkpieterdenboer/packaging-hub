@@ -57,7 +57,7 @@ interface Product {
   articleCode: string | null
   supplierId: string
   productTypeId: string | null
-  supplier: { id: string; name: string }
+  supplier: { id: string; name: string; isActive: boolean }
   productType: { id: string; name: string } | null
   unitsPerBox: number | null
   boxesPerPallet: number | null
@@ -916,7 +916,9 @@ export default function ProductsPage() {
                       <TableCell className="font-mono text-xs">
                         {displayValue(product.articleCode)}
                       </TableCell>
-                      <TableCell>{product.supplier.name}</TableCell>
+                      <TableCell className={!product.supplier.isActive ? 'text-gray-400 line-through' : ''}>
+                        {product.supplier.name}
+                      </TableCell>
                       <TableCell>
                         {product.productType?.name ?? '-'}
                       </TableCell>
@@ -930,13 +932,19 @@ export default function ProductsPage() {
                         {formatPrice(product.pricePerUnit)}
                       </TableCell>
                       <TableCell>
-                        <Badge
-                          variant={
-                            product.isActive ? 'default' : 'destructive'
-                          }
-                        >
-                          {product.isActive ? t('admin.products.active') : t('admin.products.inactive')}
-                        </Badge>
+                        {!product.isActive ? (
+                          <Badge variant="destructive">
+                            {t('admin.products.inactive')}
+                          </Badge>
+                        ) : !product.supplier.isActive ? (
+                          <Badge className="bg-amber-100 text-amber-800">
+                            {t('admin.products.supplierInactive')}
+                          </Badge>
+                        ) : (
+                          <Badge variant="default">
+                            {t('admin.products.active')}
+                          </Badge>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}

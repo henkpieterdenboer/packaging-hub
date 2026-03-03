@@ -32,8 +32,6 @@ import {
 import { Plus, Pencil } from 'lucide-react'
 import { toast } from 'sonner'
 import {
-  ArticleGroup,
-  ArticleGroupType,
   Language,
   LanguageLabels,
   type LanguageType,
@@ -49,7 +47,6 @@ interface Supplier {
   name: string
   email: string
   ccEmails: string[]
-  articleGroup: string
   language: string
   isActive: boolean
   createdAt: string
@@ -60,7 +57,6 @@ interface SupplierFormData {
   name: string
   email: string
   ccEmails: string
-  articleGroup: ArticleGroupType | ''
   language: LanguageType
   isActive: boolean
 }
@@ -69,7 +65,6 @@ const emptyForm: SupplierFormData = {
   name: '',
   email: '',
   ccEmails: '',
-  articleGroup: '',
   language: 'en',
   isActive: true,
 }
@@ -121,7 +116,6 @@ export default function SuppliersPage() {
       name: sup.name,
       email: sup.email,
       ccEmails: sup.ccEmails.join(', '),
-      articleGroup: sup.articleGroup as ArticleGroupType,
       language: (sup.language || 'en') as LanguageType,
       isActive: sup.isActive,
     })
@@ -131,7 +125,7 @@ export default function SuppliersPage() {
   // -- Submit ---------------------------------------------------------------
 
   async function handleSubmit() {
-    if (!form.name || !form.email || !form.articleGroup) {
+    if (!form.name || !form.email) {
       toast.error(t('admin.suppliers.requiredFields'))
       return
     }
@@ -148,7 +142,6 @@ export default function SuppliersPage() {
         name: form.name,
         email: form.email,
         ccEmails,
-        articleGroup: form.articleGroup,
         language: form.language,
         ...(editingId ? { isActive: form.isActive } : {}),
       }
@@ -213,7 +206,6 @@ export default function SuppliersPage() {
                 <TableRow>
                   <TableHead>{t('admin.suppliers.name')}</TableHead>
                   <TableHead>{t('admin.suppliers.email')}</TableHead>
-                  <TableHead>{t('admin.suppliers.articleGroup')}</TableHead>
                   <TableHead className="text-right">{t('admin.suppliers.products')}</TableHead>
                   <TableHead>{t('admin.suppliers.status')}</TableHead>
                   <TableHead className="w-[80px]">{t('admin.suppliers.actions')}</TableHead>
@@ -224,11 +216,6 @@ export default function SuppliersPage() {
                   <TableRow key={sup.id}>
                     <TableCell className="font-medium">{sup.name}</TableCell>
                     <TableCell>{sup.email}</TableCell>
-                    <TableCell>
-                      <Badge variant="secondary">
-                        {t(`labels.articleGroups.${sup.articleGroup}`)}
-                      </Badge>
-                    </TableCell>
                     <TableCell className="text-right">
                       {sup._count?.products ?? 0}
                     </TableCell>
@@ -307,33 +294,6 @@ export default function SuppliersPage() {
               <p className="text-xs text-muted-foreground">
                 {t('admin.suppliers.ccEmailsHint')}
               </p>
-            </div>
-
-            {/* Article Group */}
-            <div className="grid gap-2">
-              <Label htmlFor="articleGroup">{t('admin.suppliers.articleGroupLabel')}</Label>
-              <Select
-                value={form.articleGroup}
-                onValueChange={(value: string) =>
-                  setForm((prev) => ({
-                    ...prev,
-                    articleGroup: value as ArticleGroupType,
-                  }))
-                }
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder={t('admin.suppliers.articleGroupPlaceholder')} />
-                </SelectTrigger>
-                <SelectContent>
-                  {(Object.keys(ArticleGroup) as ArticleGroupType[]).map(
-                    (group) => (
-                      <SelectItem key={group} value={group}>
-                        {t(`labels.articleGroups.${group}`)}
-                      </SelectItem>
-                    ),
-                  )}
-                </SelectContent>
-              </Select>
             </div>
 
             {/* Communication Language */}

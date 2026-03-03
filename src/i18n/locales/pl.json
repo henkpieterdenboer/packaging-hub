@@ -251,7 +251,14 @@
     "searchPlaceholder": "Szukaj zamówień...",
     "allEmployees": "Wszyscy Pracownicy",
     "allSuppliers": "Wszyscy Dostawcy",
-    "noResults": "Brak zamówień pasujących do filtrów."
+    "noResults": "Brak zamówień pasujących do filtrów.",
+    "confirmBreakdown": "Potwierdź",
+    "overrideBreakdown": "Dostosuj",
+    "confirmed": "Potwierdzone",
+    "adjusted": "Dostosowane",
+    "actual": "Rzeczywiste",
+    "actualBoxes": "Rzeczywiste kartony",
+    "actualUnits": "Rzeczywiste sztuki"
   },
   "products": {
     "title": "Nowe Zamówienie",
@@ -427,7 +434,6 @@
       "noSuppliers": "Nie znaleziono dostawców.",
       "name": "Nazwa",
       "email": "E-mail",
-      "articleGroup": "Grupa Artykułów",
       "products": "Produkty",
       "status": "Status",
       "actions": "Akcje",
@@ -439,8 +445,6 @@
       "ccEmails": "E-maile CC",
       "ccEmailsPlaceholder": "cc1@przyklad.pl, cc2@przyklad.pl",
       "ccEmailsHint": "Oddziel wiele adresów przecinkami",
-      "articleGroupLabel": "Grupa Artykułów *",
-      "articleGroupPlaceholder": "Wybierz grupę artykułów",
       "languageLabel": "Język Komunikacji",
       "activeLabel": "Aktywny",
       "cancel": "Anuluj",
@@ -496,6 +500,7 @@
       "saving": "Zapisywanie...",
       "active": "Aktywny",
       "inactive": "Nieaktywny",
+      "supplierInactive": "Dostawca Nieaktywny",
       "loadError": "Nie udało się załadować produktów",
       "requiredFields": "Wypełnij wszystkie wymagane pola",
       "updated": "Produkt zaktualizowany",
@@ -531,13 +536,6 @@
       "PIECE": "Sztuka",
       "BOX": "Karton",
       "PALLET": "Paleta"
-    },
-    "articleGroups": {
-      "PACKAGING": "Opakowania",
-      "LABELS": "Etykiety",
-      "TAPE": "Taśma",
-      "PALLETS": "Palety",
-      "OTHER": "Inne"
     },
     "emailTypes": {
       "ORDER": "Zamówienie",
@@ -581,6 +579,7 @@
       "breakdown": "Przeliczenie",
       "placedByCompany": "To zamówienie zostało złożone w imieniu Coloriginz.",
       "notes": "Uwagi:",
+      "orderNumberNote": "Prosimy o podanie numeru zamówienia {{orderNumber}} zarówno na liście przewozowym, jak i na fakturze.",
       "footer": "To jest automatyczna wiadomość z SupplyHub.",
       "unitLabels": {
         "PIECE": "Sztuka/Sztuki",

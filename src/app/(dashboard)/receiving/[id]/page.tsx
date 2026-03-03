@@ -15,6 +15,9 @@ import {
   Upload,
   Trash2,
   Image as ImageIcon,
+  Check,
+  X,
+  Pencil,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import type { OrderStatusType, UnitType } from '@/types'
@@ -60,6 +63,15 @@ interface FormItem {
   receivedDate: string
 }
 
+// Breakdown confirmation: pending (not yet confirmed), confirmed, or editing (override)
+type BreakdownState = 'pending' | 'confirmed' | 'editing'
+
+interface BreakdownOverride {
+  state: BreakdownState
+  actualBoxes: number | null
+  actualUnits: number | null
+}
+
 const statusColors: Record<string, string> = {
   PENDING: 'bg-yellow-100 text-yellow-800',
   PARTIALLY_RECEIVED: 'bg-blue-100 text-blue-800',
@@ -69,6 +81,34 @@ const statusColors: Record<string, string> = {
 function getTodayString(): string {
   const d = new Date()
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+// Does this item have a breakdown at all?
+function hasBreakdown(item: OrderItem): boolean {
+  const { unit } = item
+  const { unitsPerBox, boxesPerPallet } = item.product
+  if (unit === 'PALLET' && boxesPerPallet) return true
+  if (unit === 'BOX' && unitsPerBox) return true
+  return false
+}
+
+// Calculate expected boxes and units from the received quantity
+function calcBreakdown(
+  item: OrderItem,
+  qty: number,
+): { expectedBoxes: number | null; expectedUnits: number | null } {
+  const { unit } = item
+  const { unitsPerBox, boxesPerPallet } = item.product
+
+  if (unit === 'PALLET' && boxesPerPallet) {
+    const boxes = qty * boxesPerPallet
+    const units = unitsPerBox ? boxes * unitsPerBox : null
+    return { expectedBoxes: boxes, expectedUnits: units }
+  }
+  if (unit === 'BOX' && unitsPerBox) {
+    return { expectedBoxes: null, expectedUnits: qty * unitsPerBox }
+  }
+  return { expectedBoxes: null, expectedUnits: null }
 }
 
 export default function ReceivingDetailPage() {
@@ -87,6 +127,7 @@ export default function ReceivingDetailPage() {
   const [saving, setSaving] = useState(false)
   const [photos, setPhotos] = useState<Photo[]>([])
   const [uploading, setUploading] = useState(false)
+  const [breakdowns, setBreakdowns] = useState<Record<string, BreakdownOverride>>({})
 
   useEffect(() => {
     if (status === 'unauthenticated') router.push('/login')
@@ -143,21 +184,51 @@ export default function ReceivingDetailPage() {
       ...prev,
       [itemId]: { ...prev[itemId], [field]: value },
     }))
+    // Reset breakdown confirmation when quantity changes
+    if (field === 'quantityReceived') {
+      setBreakdowns((prev) => {
+        const cur = prev[itemId]
+        if (!cur) return prev
+        return { ...prev, [itemId]: { ...cur, state: 'pending' } }
+      })
+    }
   }
 
-  function getBreakdown(item: OrderItem, qty: number): string | null {
-    const { unit } = item
-    const { unitsPerBox, boxesPerPallet } = item.product
-    if (unit === 'PALLET' && boxesPerPallet && unitsPerBox) {
-      const boxes = qty * boxesPerPallet
-      const pieces = boxes * unitsPerBox
-      return `= ${boxes} ${t('labels.units.BOX').toLowerCase()} = ${pieces} ${t('labels.units.PIECE').toLowerCase()}`
-    }
-    if (unit === 'BOX' && unitsPerBox) {
-      const pieces = qty * unitsPerBox
-      return `= ${pieces} ${t('labels.units.PIECE').toLowerCase()}`
-    }
-    return null
+  function confirmBreakdown(itemId: string) {
+    setBreakdowns((prev) => ({
+      ...prev,
+      [itemId]: { state: 'confirmed', actualBoxes: null, actualUnits: null },
+    }))
+  }
+
+  function startEditing(itemId: string, item: OrderItem, qty: number) {
+    const { expectedBoxes, expectedUnits } = calcBreakdown(item, qty)
+    setBreakdowns((prev) => ({
+      ...prev,
+      [itemId]: {
+        state: 'editing',
+        actualBoxes: expectedBoxes,
+        actualUnits: expectedUnits,
+      },
+    }))
+  }
+
+  function updateOverride(
+    itemId: string,
+    field: 'actualBoxes' | 'actualUnits',
+    value: number,
+  ) {
+    setBreakdowns((prev) => ({
+      ...prev,
+      [itemId]: { ...prev[itemId], [field]: value },
+    }))
+  }
+
+  function confirmOverride(itemId: string) {
+    setBreakdowns((prev) => ({
+      ...prev,
+      [itemId]: { ...prev[itemId], state: 'confirmed' },
+    }))
   }
 
   async function handleSave() {
@@ -307,7 +378,10 @@ export default function ReceivingDetailPage() {
             {order.items.map((item) => {
               const form = formData[item.id]
               const receivedQty = form?.quantityReceived ?? 0
-              const breakdown = getBreakdown(item, receivedQty)
+              const showBreakdown = hasBreakdown(item) && receivedQty > 0
+              const { expectedBoxes, expectedUnits } = calcBreakdown(item, receivedQty)
+              const bd = breakdowns[item.id]
+              const bdState = bd?.state ?? 'pending'
 
               return (
                 <div
@@ -331,7 +405,7 @@ export default function ReceivingDetailPage() {
                   </div>
 
                   {/* Receive inputs */}
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <div>
                       <label className="text-sm font-medium text-gray-700">
                         {t('receiving.receivedQty')} (
@@ -370,17 +444,179 @@ export default function ReceivingDetailPage() {
                         disabled={isReceived}
                       />
                     </div>
-                    {breakdown && (
-                      <div>
-                        <label className="text-sm font-medium text-gray-700">
-                          {t('receiving.breakdown')}
-                        </label>
-                        <p className="mt-2 text-sm text-gray-600">
-                          {breakdown}
-                        </p>
-                      </div>
-                    )}
                   </div>
+
+                  {/* Breakdown confirmation */}
+                  {showBreakdown && !isReceived && (
+                    <div className="rounded-md bg-gray-50 p-3 space-y-2">
+                      {/* Expected breakdown line */}
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-sm text-gray-700">
+                          <span className="font-medium">{t('receiving.breakdown')}:</span>{' '}
+                          {expectedBoxes !== null && (
+                            <>
+                              {expectedBoxes} {t('labels.units.BOX').toLowerCase()}
+                            </>
+                          )}
+                          {expectedBoxes !== null && expectedUnits !== null && ' = '}
+                          {expectedUnits !== null && (
+                            <>
+                              {expectedUnits} {t('labels.units.PIECE').toLowerCase()}
+                            </>
+                          )}
+                        </p>
+
+                        {bdState === 'pending' && (
+                          <div className="flex items-center gap-1 shrink-0">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-8 w-8 p-0 border-green-300 text-green-600 hover:bg-green-50 hover:text-green-700"
+                              onClick={() => confirmBreakdown(item.id)}
+                              title={t('receiving.confirmBreakdown')}
+                            >
+                              <Check className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-8 w-8 p-0 border-red-300 text-red-500 hover:bg-red-50 hover:text-red-700"
+                              onClick={() => startEditing(item.id, item, receivedQty)}
+                              title={t('receiving.overrideBreakdown')}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        )}
+
+                        {bdState === 'confirmed' && !bd?.actualBoxes && !bd?.actualUnits && (
+                          <div className="flex items-center gap-1 shrink-0">
+                            <span className="inline-flex items-center gap-1 text-xs font-medium text-green-700 bg-green-100 rounded-full px-2 py-0.5">
+                              <Check className="h-3 w-3" />
+                              {t('receiving.confirmed')}
+                            </span>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 w-7 p-0 text-gray-400 hover:text-gray-600"
+                              onClick={() => startEditing(item.id, item, receivedQty)}
+                              title={t('receiving.overrideBreakdown')}
+                            >
+                              <Pencil className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        )}
+
+                        {bdState === 'confirmed' && (bd?.actualBoxes !== null || bd?.actualUnits !== null) && (
+                          <div className="flex items-center gap-1 shrink-0">
+                            <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-700 bg-amber-100 rounded-full px-2 py-0.5">
+                              <Pencil className="h-3 w-3" />
+                              {t('receiving.adjusted')}
+                            </span>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 w-7 p-0 text-gray-400 hover:text-gray-600"
+                              onClick={() => startEditing(item.id, item, receivedQty)}
+                              title={t('receiving.overrideBreakdown')}
+                            >
+                              <Pencil className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Override inputs */}
+                      {bdState === 'editing' && (
+                        <div className="flex items-end gap-3 pt-1">
+                          {expectedBoxes !== null && (
+                            <div className="flex-1">
+                              <label className="text-xs font-medium text-gray-600">
+                                {t('receiving.actualBoxes')}
+                              </label>
+                              <Input
+                                type="number"
+                                min={0}
+                                value={bd?.actualBoxes ?? 0}
+                                onChange={(e) =>
+                                  updateOverride(
+                                    item.id,
+                                    'actualBoxes',
+                                    parseInt(e.target.value) || 0,
+                                  )
+                                }
+                                className="mt-1 h-9"
+                              />
+                            </div>
+                          )}
+                          {expectedUnits !== null && (
+                            <div className="flex-1">
+                              <label className="text-xs font-medium text-gray-600">
+                                {t('receiving.actualUnits')}
+                              </label>
+                              <Input
+                                type="number"
+                                min={0}
+                                value={bd?.actualUnits ?? 0}
+                                onChange={(e) =>
+                                  updateOverride(
+                                    item.id,
+                                    'actualUnits',
+                                    parseInt(e.target.value) || 0,
+                                  )
+                                }
+                                className="mt-1 h-9"
+                              />
+                            </div>
+                          )}
+                          <Button
+                            size="sm"
+                            className="h-9"
+                            onClick={() => confirmOverride(item.id)}
+                          >
+                            <Check className="h-4 w-4" />
+                            {t('receiving.confirmBreakdown')}
+                          </Button>
+                        </div>
+                      )}
+
+                      {/* Show actual values when confirmed with override */}
+                      {bdState === 'confirmed' && (bd?.actualBoxes !== null || bd?.actualUnits !== null) && (
+                        <p className="text-sm font-medium text-amber-800">
+                          {t('receiving.actual')}:{' '}
+                          {bd?.actualBoxes !== null && (
+                            <>
+                              {bd.actualBoxes} {t('labels.units.BOX').toLowerCase()}
+                            </>
+                          )}
+                          {bd?.actualBoxes !== null && bd?.actualUnits !== null && ' = '}
+                          {bd?.actualUnits !== null && (
+                            <>
+                              {bd.actualUnits} {t('labels.units.PIECE').toLowerCase()}
+                            </>
+                          )}
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Read-only breakdown for received orders */}
+                  {showBreakdown && isReceived && (
+                    <p className="text-sm text-gray-500">
+                      {t('receiving.breakdown')}:{' '}
+                      {expectedBoxes !== null && (
+                        <>
+                          {expectedBoxes} {t('labels.units.BOX').toLowerCase()}
+                        </>
+                      )}
+                      {expectedBoxes !== null && expectedUnits !== null && ' = '}
+                      {expectedUnits !== null && (
+                        <>
+                          {expectedUnits} {t('labels.units.PIECE').toLowerCase()}
+                        </>
+                      )}
+                    </p>
+                  )}
                 </div>
               )
             })}

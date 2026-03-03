@@ -24,7 +24,7 @@ export async function GET() {
 
     const products = await prisma.product.findMany({
       include: {
-        supplier: { select: { id: true, name: true } },
+        supplier: { select: { id: true, name: true, isActive: true } },
         productType: { select: { id: true, name: true } },
       },
       orderBy: { name: 'asc' },

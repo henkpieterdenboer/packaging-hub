@@ -251,7 +251,14 @@
     "searchPlaceholder": "Zoek bestellingen...",
     "allEmployees": "Alle Medewerkers",
     "allSuppliers": "Alle Leveranciers",
-    "noResults": "Geen bestellingen gevonden voor deze filters."
+    "noResults": "Geen bestellingen gevonden voor deze filters.",
+    "confirmBreakdown": "Bevestigen",
+    "overrideBreakdown": "Aanpassen",
+    "confirmed": "Bevestigd",
+    "adjusted": "Aangepast",
+    "actual": "Werkelijk",
+    "actualBoxes": "Werkelijke dozen",
+    "actualUnits": "Werkelijke stuks"
   },
   "products": {
     "title": "Nieuwe Bestelling",
@@ -427,7 +434,6 @@
       "noSuppliers": "Geen leveranciers gevonden.",
       "name": "Naam",
       "email": "E-mail",
-      "articleGroup": "Artikelgroep",
       "products": "Producten",
       "status": "Status",
       "actions": "Acties",
@@ -439,8 +445,6 @@
       "ccEmails": "CC E-mails",
       "ccEmailsPlaceholder": "cc1@voorbeeld.nl, cc2@voorbeeld.nl",
       "ccEmailsHint": "Scheid meerdere adressen met komma's",
-      "articleGroupLabel": "Artikelgroep *",
-      "articleGroupPlaceholder": "Selecteer artikelgroep",
       "languageLabel": "Communicatietaal",
       "activeLabel": "Actief",
       "cancel": "Annuleren",
@@ -496,6 +500,7 @@
       "saving": "Opslaan...",
       "active": "Actief",
       "inactive": "Inactief",
+      "supplierInactive": "Leverancier Inactief",
       "loadError": "Producten laden mislukt",
       "requiredFields": "Vul alle verplichte velden in",
       "updated": "Product bijgewerkt",
@@ -531,13 +536,6 @@
       "PIECE": "Stuk",
       "BOX": "Doos",
       "PALLET": "Pallet"
-    },
-    "articleGroups": {
-      "PACKAGING": "Verpakking",
-      "LABELS": "Etiketten",
-      "TAPE": "Tape",
-      "PALLETS": "Pallets",
-      "OTHER": "Overig"
     },
     "emailTypes": {
       "ORDER": "Bestelling",
@@ -581,6 +579,7 @@
       "breakdown": "Omrekening",
       "placedByCompany": "Deze bestelling is geplaatst namens Coloriginz.",
       "notes": "Opmerkingen:",
+      "orderNumberNote": "Gelieve bestelnummer {{orderNumber}} te vermelden op zowel de pakbon als de factuur.",
       "footer": "Dit is een automatisch bericht van SupplyHub.",
       "unitLabels": {
         "PIECE": "Stuk(s)",

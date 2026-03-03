@@ -52,7 +52,7 @@ Note: `@prisma/adapter-neon` is installed but **not used**. The simple `datasour
 ### Database Models (8)
 
 - **User** — employees with roles (ADMIN, USER), activation flow, `passwordHash` nullable for pre-activation
-- **Supplier** — suppliers with `ccEmails` string array and `articleGroup`
+- **Supplier** — suppliers with `ccEmails` string array and `language`
 - **Product** — items linked to suppliers and optional ProductType, optional `unitsPerBox`/`unitsPerPallet`/`pricePerUnit`, optional `pdfUrl`
 - **ProductType** — categorization for products (e.g. Boxes, Labels), managed by admins
 - **Order** — purchase orders with auto-generated `BEST-XXX` numbers, status tracking (PENDING → PARTIALLY_RECEIVED → RECEIVED)

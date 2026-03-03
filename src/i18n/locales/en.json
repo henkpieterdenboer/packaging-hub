@@ -251,7 +251,14 @@
     "searchPlaceholder": "Search orders...",
     "allEmployees": "All Employees",
     "allSuppliers": "All Suppliers",
-    "noResults": "No orders match your filters."
+    "noResults": "No orders match your filters.",
+    "confirmBreakdown": "Confirm",
+    "overrideBreakdown": "Adjust",
+    "confirmed": "Confirmed",
+    "adjusted": "Adjusted",
+    "actual": "Actual",
+    "actualBoxes": "Actual boxes",
+    "actualUnits": "Actual units"
   },
   "products": {
     "title": "New Order",
@@ -427,7 +434,6 @@
       "noSuppliers": "No suppliers found.",
       "name": "Name",
       "email": "Email",
-      "articleGroup": "Article Group",
       "products": "Products",
       "status": "Status",
       "actions": "Actions",
@@ -439,8 +445,6 @@
       "ccEmails": "CC Emails",
       "ccEmailsPlaceholder": "cc1@example.com, cc2@example.com",
       "ccEmailsHint": "Separate multiple addresses with commas",
-      "articleGroupLabel": "Article Group *",
-      "articleGroupPlaceholder": "Select article group",
       "languageLabel": "Communication Language",
       "activeLabel": "Active",
       "cancel": "Cancel",
@@ -496,6 +500,7 @@
       "saving": "Saving...",
       "active": "Active",
       "inactive": "Inactive",
+      "supplierInactive": "Supplier Inactive",
       "loadError": "Could not load products",
       "requiredFields": "Please fill in all required fields",
       "updated": "Product updated",
@@ -531,13 +536,6 @@
       "PIECE": "Piece",
       "BOX": "Box",
       "PALLET": "Pallet"
-    },
-    "articleGroups": {
-      "PACKAGING": "Packaging",
-      "LABELS": "Labels",
-      "TAPE": "Tape",
-      "PALLETS": "Pallets",
-      "OTHER": "Other"
     },
     "emailTypes": {
       "ORDER": "Order",
@@ -581,6 +579,7 @@
       "breakdown": "Breakdown",
       "placedByCompany": "This order has been placed on behalf of Coloriginz.",
       "notes": "Notes:",
+      "orderNumberNote": "Please reference order number {{orderNumber}} on both the packing slip and the invoice.",
       "footer": "This is an automated message from SupplyHub.",
       "unitLabels": {
         "PIECE": "Piece(s)",

@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useCallback, useEffect, useMemo, useState } from 'react'
+import { Fragment, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
@@ -24,7 +24,7 @@ import {
 import { Plus, ShoppingCart, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
 import { useTranslation } from '@/i18n/use-translation'
 import { localeMap } from '@/i18n'
-import type { OrderStatusType } from '@/types'
+import type { OrderStatusType, UnitType } from '@/types'
 
 interface Order {
   id: string
@@ -36,6 +36,14 @@ interface Order {
   employee: { firstName: string; lastName: string }
   supplier: { name: string }
   _count: { items: number }
+}
+
+interface ExpandedItem {
+  id: string
+  quantity: number
+  unit: string
+  quantityReceived: number | null
+  product: { name: string; articleCode: string }
 }
 
 const statusColors: Record<string, string> = {
@@ -83,6 +91,9 @@ function OrdersContent() {
   const [statusFilter, setStatusFilter] = useState(initialStatus)
   const [sortField, setSortField] = useState<SortField>('orderDate')
   const [sortDir, setSortDir] = useState<SortDir>('desc')
+  const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [expandedItems, setExpandedItems] = useState<Record<string, ExpandedItem[]>>({})
+  const clickTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     if (status === 'unauthenticated') router.push('/login')
@@ -147,6 +158,38 @@ function OrdersContent() {
 
     return sorted
   }, [orders, statusFilter, sortField, sortDir])
+
+  async function toggleExpand(orderId: string) {
+    if (expandedId === orderId) {
+      setExpandedId(null)
+      return
+    }
+    setExpandedId(orderId)
+    if (!expandedItems[orderId]) {
+      try {
+        const res = await fetch(`/api/orders/${orderId}`)
+        if (res.ok) {
+          const data = await res.json()
+          setExpandedItems((prev) => ({ ...prev, [orderId]: data.items }))
+        }
+      } catch (err) {
+        console.error('Failed to fetch order items:', err)
+      }
+    }
+  }
+
+  function handleRowClick(orderId: string) {
+    if (clickTimerRef.current) {
+      clearTimeout(clickTimerRef.current)
+      clickTimerRef.current = null
+      router.push(`/orders/${orderId}`)
+    } else {
+      clickTimerRef.current = setTimeout(() => {
+        clickTimerRef.current = null
+        toggleExpand(orderId)
+      }, 300)
+    }
+  }
 
   function SortableHeader({ field, children }: { field: SortField; children: React.ReactNode }) {
     const isActive = sortField === field
@@ -263,53 +306,90 @@ function OrdersContent() {
               {filteredAndSorted.map((order) => {
                 const daysOpen = getDaysOpen(order.orderDate)
                 const isOverdue = daysOpen > 7 && order.status !== 'RECEIVED' && order.status !== 'CANCELLED'
+                const isExpanded = expandedId === order.id
+                const items = expandedItems[order.id]
 
                 return (
-                  <TableRow
-                    key={order.id}
-                    className="cursor-pointer hover:bg-gray-50"
-                    onClick={() => router.push(`/orders/${order.id}`)}
-                  >
-                    <TableCell className="font-medium font-mono">
-                      {order.orderNumber}
-                    </TableCell>
-                    <TableCell>{order.supplier.name}</TableCell>
-                    <TableCell>
-                      {new Date(order.orderDate).toLocaleDateString(
-                        localeMap[language] || 'en-US',
-                        { year: 'numeric', month: 'short', day: 'numeric' },
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        className={statusColors[order.status] ?? 'bg-gray-100 text-gray-800'}
-                      >
-                        {t(`labels.orderStatus.${order.status as OrderStatusType}`)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <span
-                        className={
-                          isOverdue
-                            ? 'font-bold text-red-600'
-                            : 'text-gray-500'
-                        }
-                      >
-                        {daysOpen}d
-                      </span>
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell">
-                      {order.invoiceNumber ? (
-                        <Badge className="bg-green-100 text-green-800">
-                          {order.invoiceNumber}
+                  <Fragment key={order.id}>
+                    <TableRow
+                      className="cursor-pointer hover:bg-gray-50"
+                      onClick={() => handleRowClick(order.id)}
+                    >
+                      <TableCell className="font-medium font-mono">
+                        {order.orderNumber}
+                      </TableCell>
+                      <TableCell>{order.supplier.name}</TableCell>
+                      <TableCell>
+                        {new Date(order.orderDate).toLocaleDateString(
+                          localeMap[language] || 'en-US',
+                          { year: 'numeric', month: 'short', day: 'numeric' },
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          className={statusColors[order.status] ?? 'bg-gray-100 text-gray-800'}
+                        >
+                          {t(`labels.orderStatus.${order.status as OrderStatusType}`)}
                         </Badge>
-                      ) : order.status === 'RECEIVED' || order.status === 'PARTIALLY_RECEIVED' ? (
-                        <span className="text-sm text-amber-600">{t('orders.noInvoice')}</span>
-                      ) : (
-                        <span className="text-sm text-gray-400">-</span>
-                      )}
-                    </TableCell>
-                  </TableRow>
+                      </TableCell>
+                      <TableCell>
+                        <span
+                          className={
+                            isOverdue
+                              ? 'font-bold text-red-600'
+                              : 'text-gray-500'
+                          }
+                        >
+                          {daysOpen}d
+                        </span>
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        {order.invoiceNumber ? (
+                          <Badge className="bg-green-100 text-green-800">
+                            {order.invoiceNumber}
+                          </Badge>
+                        ) : order.status === 'RECEIVED' || order.status === 'PARTIALLY_RECEIVED' ? (
+                          <span className="text-sm text-amber-600">{t('orders.noInvoice')}</span>
+                        ) : (
+                          <span className="text-sm text-gray-400">-</span>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                    {isExpanded && (
+                      <TableRow className="hover:bg-transparent">
+                        <TableCell colSpan={6} className="bg-gray-50/50 px-6 py-2">
+                          {items ? (
+                            <div className="space-y-1">
+                              {items.map((item) => (
+                                <div
+                                  key={item.id}
+                                  className="flex flex-wrap items-baseline gap-x-4 gap-y-0.5 text-sm"
+                                >
+                                  <span className="font-medium">
+                                    {item.product.name}
+                                  </span>
+                                  <span className="text-xs font-mono text-gray-400">
+                                    {item.product.articleCode}
+                                  </span>
+                                  <span className="text-gray-600">
+                                    {item.quantity}{' '}
+                                    {t(`labels.units.${item.unit as UnitType}`)}
+                                  </span>
+                                  {item.quantityReceived !== null && (
+                                    <span className="text-gray-500">
+                                      {item.quantityReceived}/{item.quantity}
+                                    </span>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-sm text-gray-400">{t('common.loading')}</p>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </Fragment>
                 )
               })}
             </TableBody>

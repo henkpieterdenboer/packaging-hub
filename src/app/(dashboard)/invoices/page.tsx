@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useMemo } from 'react'
+import { Fragment, useEffect, useState, useMemo } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import {
@@ -25,6 +25,7 @@ import { FileText, Loader2, Check, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { useTranslation } from '@/i18n/use-translation'
 import { localeMap } from '@/i18n'
+import type { UnitType } from '@/types'
 
 interface OrderItem {
   id: string
@@ -65,6 +66,7 @@ export default function InvoicesPage() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [invoiceInput, setInvoiceInput] = useState('')
   const [saving, setSaving] = useState<string | null>(null)
+  const [expandedId, setExpandedId] = useState<string | null>(null)
 
   useEffect(() => {
     if (status === 'unauthenticated') router.push('/login')
@@ -280,111 +282,162 @@ export default function InvoicesPage() {
                 const total = calculateTotal(order.items)
                 const isEditing = editingId === order.id
                 const isSaving = saving === order.id
+                const isExpanded = expandedId === order.id
 
                 return (
-                  <TableRow key={order.id}>
-                    <TableCell className="font-medium">
-                      {order.supplier.name}
-                    </TableCell>
-                    <TableCell className="font-mono text-sm">
-                      {order.orderNumber}
-                    </TableCell>
-                    <TableCell className="hidden sm:table-cell">
-                      {new Date(order.orderDate).toLocaleDateString(
-                        localeMap[language] || 'en-US',
-                        { year: 'numeric', month: 'short', day: 'numeric' },
-                      )}
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell">
-                      {getReceivedSummary(order.items)}
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell text-right font-mono">
-                      {total > 0
-                        ? new Intl.NumberFormat(localeMap[language] || 'en-US', {
-                            style: 'currency',
-                            currency: 'EUR',
-                          }).format(total)
-                        : '-'}
-                    </TableCell>
-                    <TableCell>
-                      {isEditing ? (
-                        <Input
-                          value={invoiceInput}
-                          onChange={(e) => setInvoiceInput(e.target.value)}
-                          placeholder={t('invoices.enterInvoiceNumber')}
-                          className="h-8 w-[160px]"
-                          autoFocus
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') handleSaveInvoice(order.id)
-                            if (e.key === 'Escape') {
-                              setEditingId(null)
-                              setInvoiceInput('')
-                            }
-                          }}
-                        />
-                      ) : order.invoiceNumber ? (
-                        <Badge className="bg-green-100 text-green-800">
-                          {order.invoiceNumber}
-                        </Badge>
-                      ) : (
-                        <span className="text-sm text-gray-400">-</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1">
+                  <Fragment key={order.id}>
+                    <TableRow
+                      className="cursor-pointer hover:bg-gray-50"
+                      onClick={() =>
+                        setExpandedId((prev) =>
+                          prev === order.id ? null : order.id,
+                        )
+                      }
+                    >
+                      <TableCell className="font-medium">
+                        {order.supplier.name}
+                      </TableCell>
+                      <TableCell className="font-mono text-sm">
+                        {order.orderNumber}
+                      </TableCell>
+                      <TableCell className="hidden sm:table-cell">
+                        {new Date(order.orderDate).toLocaleDateString(
+                          localeMap[language] || 'en-US',
+                          { year: 'numeric', month: 'short', day: 'numeric' },
+                        )}
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        {getReceivedSummary(order.items)}
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell text-right font-mono">
+                        {total > 0
+                          ? new Intl.NumberFormat(localeMap[language] || 'en-US', {
+                              style: 'currency',
+                              currency: 'EUR',
+                            }).format(total)
+                          : '-'}
+                      </TableCell>
+                      <TableCell onClick={(e) => e.stopPropagation()}>
                         {isEditing ? (
-                          <>
+                          <Input
+                            value={invoiceInput}
+                            onChange={(e) => setInvoiceInput(e.target.value)}
+                            placeholder={t('invoices.enterInvoiceNumber')}
+                            className="h-8 w-[160px]"
+                            autoFocus
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') handleSaveInvoice(order.id)
+                              if (e.key === 'Escape') {
+                                setEditingId(null)
+                                setInvoiceInput('')
+                              }
+                            }}
+                          />
+                        ) : order.invoiceNumber ? (
+                          <Badge className="bg-green-100 text-green-800">
+                            {order.invoiceNumber}
+                          </Badge>
+                        ) : (
+                          <span className="text-sm text-gray-400">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell onClick={(e) => e.stopPropagation()}>
+                        <div className="flex items-center gap-1">
+                          {isEditing ? (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleSaveInvoice(order.id)}
+                                disabled={isSaving || !invoiceInput.trim()}
+                              >
+                                {isSaving ? (
+                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                ) : (
+                                  <Check className="h-3.5 w-3.5 text-green-600" />
+                                )}
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  setEditingId(null)
+                                  setInvoiceInput('')
+                                }}
+                              >
+                                <X className="h-3.5 w-3.5 text-gray-400" />
+                              </Button>
+                            </>
+                          ) : order.invoiceNumber ? (
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => handleSaveInvoice(order.id)}
-                              disabled={isSaving || !invoiceInput.trim()}
+                              onClick={() => handleRemoveInvoice(order.id)}
+                              disabled={isSaving}
                             >
                               {isSaving ? (
                                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
                               ) : (
-                                <Check className="h-3.5 w-3.5 text-green-600" />
+                                <X className="h-3.5 w-3.5 text-red-500" />
                               )}
                             </Button>
+                          ) : (
                             <Button
-                              variant="ghost"
+                              variant="outline"
                               size="sm"
                               onClick={() => {
-                                setEditingId(null)
+                                setEditingId(order.id)
                                 setInvoiceInput('')
                               }}
                             >
-                              <X className="h-3.5 w-3.5 text-gray-400" />
+                              <FileText className="h-3.5 w-3.5" />
                             </Button>
-                          </>
-                        ) : order.invoiceNumber ? (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleRemoveInvoice(order.id)}
-                            disabled={isSaving}
-                          >
-                            {isSaving ? (
-                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                            ) : (
-                              <X className="h-3.5 w-3.5 text-red-500" />
-                            )}
-                          </Button>
-                        ) : (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setEditingId(order.id)
-                              setInvoiceInput('')
-                            }}
-                          >
-                            <FileText className="h-3.5 w-3.5" />
-                          </Button>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                    {isExpanded && (
+                      <TableRow className="hover:bg-transparent">
+                        <TableCell colSpan={7} className="bg-gray-50/50 px-6 py-2">
+                          <div className="space-y-1">
+                            {order.items.map((item) => {
+                              const lineTotal =
+                                (item.quantityReceived ?? item.quantity) *
+                                (item.product.pricePerUnit ?? 0)
+                              return (
+                                <div
+                                  key={item.id}
+                                  className="flex flex-wrap items-baseline gap-x-4 gap-y-0.5 text-sm"
+                                >
+                                  <span className="font-medium">
+                                    {item.product.name}
+                                  </span>
+                                  <span className="text-xs font-mono text-gray-400">
+                                    {item.product.articleCode}
+                                  </span>
+                                  <span className="text-gray-600">
+                                    {item.quantity}{' '}
+                                    {t(`labels.units.${item.unit as UnitType}`)}
+                                  </span>
+                                  <span className="text-gray-500">
+                                    {item.quantityReceived ?? 0}/{item.quantity}
+                                  </span>
+                                  {lineTotal > 0 && (
+                                    <span className="font-mono text-gray-600">
+                                      {new Intl.NumberFormat(
+                                        localeMap[language] || 'en-US',
+                                        { style: 'currency', currency: 'EUR' },
+                                      ).format(lineTotal)}
+                                    </span>
+                                  )}
+                                </div>
+                              )
+                            })}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </Fragment>
                 )
               })}
             </TableBody>
