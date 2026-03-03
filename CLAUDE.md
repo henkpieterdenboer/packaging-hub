@@ -25,7 +25,8 @@ npm run dev              # Start dev server (localhost:3000)
 npm run build            # Production build
 npm run lint             # ESLint
 npm run db:seed          # Seed demo accounts (tsx prisma/seed.ts)
-npx prisma db push       # Push schema changes to DB
+npm run db:push          # Push schema to Neon DEV branch
+npm run db:push:prod     # Push schema to Neon MAIN branch (production)
 npx prisma generate      # Regenerate Prisma client
 npx prisma studio        # Open Prisma Studio DB browser
 npx shadcn@latest add <component>  # Add shadcn/ui component
@@ -189,10 +190,27 @@ Use `@/*` for all imports from `src/`.
 ### Neon Database Branching
 
 Single Neon project with two branches (same project, separate connection strings):
-- `main` branch = production database
-- `dev` branch = test/preview database
+- **`dev` branch** (`ep-still-credit-agvj8t0c`) = test/preview database — `.env` `DATABASE_URL` + `DIRECT_URL`
+- **`main` branch** (`ep-orange-river-agk5l5ep`) = production database — `.env` `DATABASE_URL_PROD` + `DIRECT_URL_PROD`
 
-Schema changes must be applied to **both** branches separately via `prisma db push` (no merge mechanism in Neon). The `dev` branch can be reset to production state if needed.
+Schema changes must be applied to **both** branches separately (no merge mechanism in Neon):
+- `npm run db:push` → pushes to **dev** (uses `DIRECT_URL` from `.env`)
+- `npm run db:push:prod` → pushes to **main** (overrides `DIRECT_URL` with `DIRECT_URL_PROD`)
+
+### Deploy Workflow
+
+**Develop (test/preview):**
+```bash
+git push origin develop      # triggers Vercel preview deploy
+npm run db:push              # push schema to Neon dev branch
+```
+
+**Production (after approval):**
+```bash
+git checkout main && git merge develop && git push origin main   # triggers Vercel production deploy
+npm run db:push:prod         # push schema to Neon main branch (add --accept-data-loss if needed)
+git checkout develop
+```
 
 ## Git Workflow
 
@@ -206,7 +224,8 @@ Schema changes must be applied to **both** branches separately via `prisma db pu
 
 See `.env.example`. Key variables:
 - `LOCAL_DB` / `LOCAL_DATABASE_URL` — Local PostgreSQL toggle
-- `DATABASE_URL` / `DIRECT_URL` — Neon PostgreSQL (pooled / direct for Prisma CLI)
+- `DATABASE_URL` / `DIRECT_URL` — Neon **dev** branch (pooled / direct for Prisma CLI)
+- `DATABASE_URL_PROD` / `DIRECT_URL_PROD` — Neon **main** branch (used by `db:push:prod`)
 - `NEXTAUTH_SECRET` / `NEXTAUTH_URL` — NextAuth config
 - `APP_URL` — Base URL for email links
 - `SMTP_HOST/PORT/USER/PASS`, `MAIL_FROM` — Production email (Resend)
