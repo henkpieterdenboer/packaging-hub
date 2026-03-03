@@ -501,6 +501,8 @@
       "active": "Aktywny",
       "inactive": "Nieaktywny",
       "supplierInactive": "Dostawca Nieaktywny",
+      "missingDataWarning": "{{count}} produkt(ów) ma niekompletne dane przeliczeniowe",
+      "missingField": "preferowana jednostka to {{unit}}, ale {{field}} nie jest ustawione",
       "loadError": "Nie udało się załadować produktów",
       "requiredFields": "Wypełnij wszystkie wymagane pola",
       "updated": "Produkt zaktualizowany",

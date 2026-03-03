@@ -8,7 +8,6 @@ import { useCart } from '@/lib/cart-context'
 import { useTranslation } from '@/i18n/use-translation'
 import { localeMap } from '@/i18n'
 import { toast } from 'sonner'
-import { Unit } from '@/types'
 import {
   Table,
   TableBody,
@@ -130,7 +129,13 @@ export default function NewOrderPage() {
   }
 
   function getUnit(product: Product): string {
-    return unitOverrides[product.id] ?? product.preferredOrderUnit ?? 'PIECE'
+    const override = unitOverrides[product.id]
+    if (override) return override
+    const pref = product.preferredOrderUnit ?? 'PIECE'
+    // Fall back to PIECE if conversion data is missing
+    if (pref === 'BOX' && !product.unitsPerBox) return 'PIECE'
+    if (pref === 'PALLET' && !product.boxesPerPallet) return 'PIECE'
+    return pref
   }
 
   // Filtering
@@ -471,11 +476,19 @@ export default function NewOrderPage() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          {Object.entries(Unit).map(([key, value]) => (
-                            <SelectItem key={key} value={value}>
-                              {t(`labels.units.${key}`)}
+                          <SelectItem value="PIECE">
+                            {t('labels.units.PIECE')}
+                          </SelectItem>
+                          {product.unitsPerBox && (
+                            <SelectItem value="BOX">
+                              {t('labels.units.BOX')}
                             </SelectItem>
-                          ))}
+                          )}
+                          {product.boxesPerPallet && (
+                            <SelectItem value="PALLET">
+                              {t('labels.units.PALLET')}
+                            </SelectItem>
+                          )}
                         </SelectContent>
                       </Select>
                     </TableCell>

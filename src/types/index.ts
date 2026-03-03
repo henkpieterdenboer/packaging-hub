@@ -83,6 +83,7 @@ export const LanguageLabels: Record<LanguageType, string> = {
 // ─── Preferred Order Unit ────────────────────────────────────────────────────
 
 export const PreferredOrderUnit = {
+  PIECE: 'PIECE',
   BOX: 'BOX',
   PALLET: 'PALLET',
 } as const
@@ -90,6 +91,7 @@ export const PreferredOrderUnit = {
 export type PreferredOrderUnitType = (typeof PreferredOrderUnit)[keyof typeof PreferredOrderUnit]
 
 export const PreferredOrderUnitLabels: Record<PreferredOrderUnitType, string> = {
+  PIECE: 'Piece',
   BOX: 'Box',
   PALLET: 'Pallet',
 }

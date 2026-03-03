@@ -501,6 +501,8 @@
       "active": "Actief",
       "inactive": "Inactief",
       "supplierInactive": "Leverancier Inactief",
+      "missingDataWarning": "{{count}} product(en) hebben onvolledige omrekeningsgegevens",
+      "missingField": "voorkeurseenheid is {{unit}}, maar {{field}} is niet ingevuld",
       "loadError": "Producten laden mislukt",
       "requiredFields": "Vul alle verplichte velden in",
       "updated": "Product bijgewerkt",

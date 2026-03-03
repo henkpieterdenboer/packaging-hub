@@ -30,7 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Plus, Pencil, Check, X, ArrowUp, ArrowDown, Download, Upload, Search } from 'lucide-react'
+import { Plus, Pencil, Check, X, ArrowUp, ArrowDown, Download, Upload, Search, AlertTriangle } from 'lucide-react'
 import { toast } from 'sonner'
 import { PreferredOrderUnit, PreferredOrderUnitType } from '@/types'
 import { useTranslation } from '@/i18n/use-translation'
@@ -96,7 +96,7 @@ const emptyForm: ProductFormData = {
   csrdRequirements: '',
   remarks: '',
   isCustom: false,
-  preferredOrderUnit: '',
+  preferredOrderUnit: 'PIECE',
   isActive: true,
 }
 
@@ -198,6 +198,17 @@ export default function ProductsPage() {
 
     return result
   }, [products, filterSupplier, filterType, searchQuery])
+
+  // Products with missing conversion data for their preferred order unit
+  const misconfiguredProducts = useMemo(() => {
+    return products.filter((p) => {
+      if (!p.isActive) return false
+      const unit = p.preferredOrderUnit || 'PIECE'
+      if (unit === 'BOX' && !p.unitsPerBox) return true
+      if (unit === 'PALLET' && !p.boxesPerPallet) return true
+      return false
+    })
+  }, [products])
 
   const sortedProducts = useMemo(() => {
     const sorted = [...filteredProducts].sort((a, b) => {
@@ -377,7 +388,7 @@ export default function ProductsPage() {
       csrdRequirements: product.csrdRequirements ?? '',
       remarks: product.remarks ?? '',
       isCustom: product.isCustom,
-      preferredOrderUnit: product.preferredOrderUnit ?? '',
+      preferredOrderUnit: product.preferredOrderUnit || 'PIECE',
       isActive: product.isActive,
     })
     setDialogOpen(true)
@@ -856,6 +867,33 @@ export default function ProductsPage() {
         </div>
       </div>
 
+      {/* -- Warnings -------------------------------------------------------- */}
+
+      {misconfiguredProducts.length > 0 && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-medium text-amber-800">
+                {t('admin.products.missingDataWarning', { count: misconfiguredProducts.length })}
+              </p>
+              <ul className="mt-2 space-y-1">
+                {misconfiguredProducts.map((p) => {
+                  const unit = p.preferredOrderUnit || 'PIECE'
+                  const missing = unit === 'BOX' ? t('admin.products.unitsPerBox') : t('admin.products.boxesPerPallet')
+                  return (
+                    <li key={p.id} className="text-sm text-amber-700">
+                      <span className="font-medium">{p.name}</span>
+                      <span className="text-amber-600"> — {t('admin.products.missingField', { unit: t(`labels.units.${unit}`), field: missing })}</span>
+                    </li>
+                  )
+                })}
+              </ul>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* -- Products Table ------------------------------------------------- */}
 
       <Card>
@@ -1114,11 +1152,11 @@ export default function ProductsPage() {
               <div className="grid gap-2">
                 <Label htmlFor="preferredOrderUnit">{t('admin.products.preferredOrderUnitLabel')}</Label>
                 <Select
-                  value={form.preferredOrderUnit || 'none'}
+                  value={form.preferredOrderUnit || 'PIECE'}
                   onValueChange={(value: string) =>
                     setForm((prev) => ({
                       ...prev,
-                      preferredOrderUnit: value === 'none' ? '' : value,
+                      preferredOrderUnit: value,
                     }))
                   }
                 >
@@ -1126,7 +1164,6 @@ export default function ProductsPage() {
                     <SelectValue placeholder={t('admin.products.preferredOrderUnitPlaceholder')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">{t('admin.products.none')}</SelectItem>
                     {(Object.values(PreferredOrderUnit) as PreferredOrderUnitType[]).map((unit) => (
                       <SelectItem key={unit} value={unit}>
                         {t(`labels.units.${unit}`)}

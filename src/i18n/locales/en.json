@@ -501,6 +501,8 @@
       "active": "Active",
       "inactive": "Inactive",
       "supplierInactive": "Supplier Inactive",
+      "missingDataWarning": "{{count}} product(s) have incomplete conversion data",
+      "missingField": "preferred unit is {{unit}}, but {{field}} is not set",
       "loadError": "Could not load products",
       "requiredFields": "Please fill in all required fields",
       "updated": "Product updated",
