@@ -29,6 +29,8 @@ export async function GET(
                 id: true,
                 name: true,
                 articleCode: true,
+                unitsPerBox: true,
+                boxesPerPallet: true,
               },
             },
             receivedBy: {
@@ -63,14 +65,7 @@ export async function GET(
       )
     }
 
-    // Check that user owns the order or is ADMIN
-    const isAdmin = session.user.roles.includes('ADMIN')
-    if (!isAdmin && order.employeeId !== session.user.id) {
-      return NextResponse.json(
-        { error: 'Insufficient permissions' },
-        { status: 403 },
-      )
-    }
+    // All authenticated users can view orders (role access controlled by middleware)
 
     return NextResponse.json(order)
   } catch (error) {

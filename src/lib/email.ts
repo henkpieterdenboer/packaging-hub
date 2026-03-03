@@ -39,6 +39,8 @@ interface OrderItemEmailData {
     name: string
     articleCode: string
   }
+  unitsPerBox?: number | null
+  boxesPerPallet?: number | null
 }
 
 interface SupplierEmailData {
@@ -150,6 +152,20 @@ function getUnitLabel(unit: string, t: TranslationFunction): string {
   return label !== key ? label : unit
 }
 
+function getBreakdown(item: OrderItemEmailData, t: TranslationFunction): string {
+  const { quantity, unit, unitsPerBox, boxesPerPallet } = item
+  if (unit === 'PALLET' && boxesPerPallet && unitsPerBox) {
+    const boxes = quantity * boxesPerPallet
+    const pieces = boxes * unitsPerBox
+    return `${quantity} ${getUnitLabel('PALLET', t)} = ${boxes} ${getUnitLabel('BOX', t)} = ${pieces} ${getUnitLabel('PIECE', t)}`
+  }
+  if (unit === 'BOX' && unitsPerBox) {
+    const pieces = quantity * unitsPerBox
+    return `${quantity} ${getUnitLabel('BOX', t)} = ${pieces} ${getUnitLabel('PIECE', t)}`
+  }
+  return ''
+}
+
 export async function sendOrderEmail(
   order: OrderEmailData,
   items: OrderItemEmailData[],
@@ -164,13 +180,17 @@ export async function sendOrderEmail(
 
   const itemRows = items
     .map(
-      (item) => `
+      (item) => {
+        const breakdown = getBreakdown(item, t)
+        return `
       <tr>
         <td style="border: 1px solid #ddd; padding: 8px;">${escapeHtml(item.product.name)}</td>
         <td style="border: 1px solid #ddd; padding: 8px;">${escapeHtml(item.product.articleCode)}</td>
         <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">${item.quantity}</td>
         <td style="border: 1px solid #ddd; padding: 8px;">${escapeHtml(getUnitLabel(item.unit, t))}</td>
-      </tr>`,
+        ${breakdown ? `<td style="border: 1px solid #ddd; padding: 8px; font-size: 12px; color: #666;">${escapeHtml(breakdown)}</td>` : '<td style="border: 1px solid #ddd; padding: 8px;"></td>'}
+      </tr>`
+      },
     )
     .join('')
 
@@ -199,6 +219,7 @@ export async function sendOrderEmail(
             <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">${t('emailTemplates.order.articleCode')}</th>
             <th style="border: 1px solid #ddd; padding: 8px; text-align: right;">${t('emailTemplates.order.quantity')}</th>
             <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">${t('emailTemplates.order.unit')}</th>
+            <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">${t('emailTemplates.order.breakdown')}</th>
           </tr>
         </thead>
         <tbody>

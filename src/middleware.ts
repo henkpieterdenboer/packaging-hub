@@ -24,10 +24,25 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
+  const roles = (token.roles as string[]) || []
+
   // Admin routes require ADMIN role
   if (pathname.startsWith('/admin')) {
-    const roles = (token.roles as string[]) || []
     if (!roles.includes('ADMIN')) {
+      return NextResponse.redirect(new URL('/dashboard', request.url))
+    }
+  }
+
+  // Ordering and receiving require ADMIN or LOGISTICS
+  if (pathname.startsWith('/products') || pathname.startsWith('/cart') || pathname.startsWith('/receiving')) {
+    if (!roles.includes('ADMIN') && !roles.includes('LOGISTICS')) {
+      return NextResponse.redirect(new URL('/dashboard', request.url))
+    }
+  }
+
+  // Invoices require ADMIN or FINANCE
+  if (pathname.startsWith('/invoices')) {
+    if (!roles.includes('ADMIN') && !roles.includes('FINANCE')) {
       return NextResponse.redirect(new URL('/dashboard', request.url))
     }
   }

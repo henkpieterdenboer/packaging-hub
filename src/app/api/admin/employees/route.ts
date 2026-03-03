@@ -33,6 +33,7 @@ export async function GET() {
         lastName: true,
         roles: true,
         isActive: true,
+        preferredLanguage: true,
         createdAt: true,
       },
       orderBy: { createdAt: 'desc' },
@@ -76,7 +77,7 @@ export async function POST(request: Request) {
       )
     }
 
-    const { email, firstName, middleName, lastName, roles } = parsed.data
+    const { email, firstName, middleName, lastName, roles, preferredLanguage } = parsed.data
 
     const existingUser = await prisma.user.findUnique({
       where: { email: email.toLowerCase() },
@@ -92,6 +93,8 @@ export async function POST(request: Request) {
     const activationToken = uuidv4()
     const activationExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
 
+    const lang = preferredLanguage || 'en'
+
     const user = await prisma.user.create({
       data: {
         email: email.toLowerCase(),
@@ -99,6 +102,7 @@ export async function POST(request: Request) {
         middleName: middleName ?? null,
         lastName,
         roles,
+        preferredLanguage: lang,
         isActive: false,
         activationToken,
         activationExpiresAt,
@@ -111,11 +115,12 @@ export async function POST(request: Request) {
         lastName: true,
         roles: true,
         isActive: true,
+        preferredLanguage: true,
         createdAt: true,
       },
     })
 
-    const emailResult = await sendActivationEmail(user.email, user.firstName, activationToken, session.user.id, 'en')
+    const emailResult = await sendActivationEmail(user.email, user.firstName, activationToken, session.user.id, lang)
 
     return NextResponse.json({ ...user, etherealUrl: emailResult.etherealUrl }, { status: 201 })
   } catch (error) {

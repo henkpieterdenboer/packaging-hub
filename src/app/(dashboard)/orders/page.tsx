@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useEffect, useState } from 'react'
+import { Suspense, useCallback, useEffect, useMemo, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
@@ -14,26 +14,28 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Plus, Eye, ShoppingCart } from 'lucide-react'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Plus, ShoppingCart, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
 import { useTranslation } from '@/i18n/use-translation'
 import { localeMap } from '@/i18n'
+import type { OrderStatusType } from '@/types'
 
 interface Order {
   id: string
   orderNumber: string
   orderDate: string
   status: string
-  notes: string | null
-  employee: {
-    firstName: string
-    lastName: string
-  }
-  supplier: {
-    name: string
-  }
-  _count: {
-    items: number
-  }
+  invoiceNumber: string | null
+  invoiceReceivedAt: string | null
+  employee: { firstName: string; lastName: string }
+  supplier: { name: string }
+  _count: { items: number }
 }
 
 const statusColors: Record<string, string> = {
@@ -41,6 +43,15 @@ const statusColors: Record<string, string> = {
   PARTIALLY_RECEIVED: 'bg-blue-100 text-blue-800',
   RECEIVED: 'bg-green-100 text-green-800',
   CANCELLED: 'bg-red-100 text-red-800',
+}
+
+type SortField = 'orderNumber' | 'supplier' | 'orderDate' | 'status' | 'daysOpen'
+type SortDir = 'asc' | 'desc'
+
+function getDaysOpen(orderDate: string): number {
+  const now = new Date()
+  const order = new Date(orderDate)
+  return Math.floor((now.getTime() - order.getTime()) / (1000 * 60 * 60 * 24))
 }
 
 export default function OrdersPage() {
@@ -63,29 +74,26 @@ function OrdersContent() {
   const { status } = useSession()
   const router = useRouter()
   const searchParams = useSearchParams()
-  const statusFilter = searchParams.get('status')
+  const initialStatus = searchParams.get('status') || 'all'
   const { t, language } = useTranslation()
 
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [statusFilter, setStatusFilter] = useState(initialStatus)
+  const [sortField, setSortField] = useState<SortField>('orderDate')
+  const [sortDir, setSortDir] = useState<SortDir>('desc')
 
   useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/login')
-    }
+    if (status === 'unauthenticated') router.push('/login')
   }, [status, router])
 
   useEffect(() => {
     async function fetchOrders() {
       try {
-        const url = statusFilter
-          ? `/api/orders?status=${statusFilter}`
-          : '/api/orders'
-        const res = await fetch(url)
-        if (!res.ok) throw new Error(t('orders.fetchError'))
-        const data = await res.json()
-        setOrders(data)
+        const res = await fetch('/api/orders')
+        if (!res.ok) throw new Error('Failed to fetch')
+        setOrders(await res.json())
       } catch (err) {
         setError(t('orders.loadError'))
         console.error('Failed to fetch orders:', err)
@@ -93,11 +101,75 @@ function OrdersContent() {
         setLoading(false)
       }
     }
+    if (status === 'authenticated') fetchOrders()
+  }, [status, t])
 
-    if (status === 'authenticated') {
-      fetchOrders()
+  const handleSort = useCallback((field: SortField) => {
+    setSortField((prev) => {
+      if (prev === field) {
+        setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
+        return prev
+      }
+      setSortDir(field === 'orderDate' || field === 'daysOpen' ? 'desc' : 'asc')
+      return field
+    })
+  }, [])
+
+  const filteredAndSorted = useMemo(() => {
+    let result = orders
+
+    if (statusFilter !== 'all') {
+      result = result.filter((o) => o.status === statusFilter)
     }
-  }, [status, statusFilter, t])
+
+    const sorted = [...result]
+    sorted.sort((a, b) => {
+      let cmp = 0
+      switch (sortField) {
+        case 'orderNumber':
+          cmp = a.orderNumber.localeCompare(b.orderNumber)
+          break
+        case 'supplier':
+          cmp = a.supplier.name.localeCompare(b.supplier.name)
+          break
+        case 'orderDate':
+          cmp = new Date(a.orderDate).getTime() - new Date(b.orderDate).getTime()
+          break
+        case 'status':
+          cmp = a.status.localeCompare(b.status)
+          break
+        case 'daysOpen':
+          cmp = getDaysOpen(a.orderDate) - getDaysOpen(b.orderDate)
+          break
+      }
+      return sortDir === 'asc' ? cmp : -cmp
+    })
+
+    return sorted
+  }, [orders, statusFilter, sortField, sortDir])
+
+  function SortableHeader({ field, children }: { field: SortField; children: React.ReactNode }) {
+    const isActive = sortField === field
+    return (
+      <TableHead
+        className="cursor-pointer select-none hover:bg-gray-50"
+        onClick={() => handleSort(field)}
+      >
+        <span className="inline-flex items-center gap-1">
+          {children}
+          {isActive ? (
+            sortDir === 'asc' ? (
+              <ArrowUp className="h-3.5 w-3.5" />
+            ) : (
+              <ArrowDown className="h-3.5 w-3.5" />
+            )
+          ) : (
+            <ArrowUpDown className="h-3.5 w-3.5 text-gray-300" />
+          )}
+        </span>
+      </TableHead>
+    )
+  }
 
   if (status === 'loading') {
     return (
@@ -107,9 +179,7 @@ function OrdersContent() {
     )
   }
 
-  if (status === 'unauthenticated') {
-    return null
-  }
+  if (status === 'unauthenticated') return null
 
   return (
     <div className="space-y-6">
@@ -123,29 +193,42 @@ function OrdersContent() {
           </p>
         </div>
         <Button asChild>
-          <Link href="/orders/new">
+          <Link href="/products">
             <Plus className="h-4 w-4" />
             {t('orders.newOrder')}
           </Link>
         </Button>
       </div>
 
-      {/* Error State */}
+      {/* Filters */}
+      <div className="flex items-center gap-3">
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-[200px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">{t('orders.filterAll')}</SelectItem>
+            <SelectItem value="PENDING">{t('labels.orderStatus.PENDING')}</SelectItem>
+            <SelectItem value="PARTIALLY_RECEIVED">{t('labels.orderStatus.PARTIALLY_RECEIVED')}</SelectItem>
+            <SelectItem value="RECEIVED">{t('labels.orderStatus.RECEIVED')}</SelectItem>
+            <SelectItem value="CANCELLED">{t('labels.orderStatus.CANCELLED')}</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
       {error && (
         <div className="rounded-md bg-red-50 p-4">
           <p className="text-sm text-red-700">{error}</p>
         </div>
       )}
 
-      {/* Loading State */}
       {loading && (
         <div className="flex items-center justify-center py-12">
           <p className="text-sm text-gray-500">{t('orders.loadingOrders')}</p>
         </div>
       )}
 
-      {/* Empty State */}
-      {!loading && !error && orders.length === 0 && (
+      {!loading && !error && filteredAndSorted.length === 0 && (
         <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-12">
           <ShoppingCart className="h-12 w-12 text-gray-300" />
           <h3 className="mt-4 text-sm font-medium text-gray-900">
@@ -155,7 +238,7 @@ function OrdersContent() {
             {t('orders.noOrdersDesc')}
           </p>
           <Button className="mt-4" asChild>
-            <Link href="/orders/new">
+            <Link href="/products">
               <Plus className="h-4 w-4" />
               {t('orders.placeNewOrder')}
             </Link>
@@ -163,60 +246,72 @@ function OrdersContent() {
         </div>
       )}
 
-      {/* Orders Table */}
-      {!loading && !error && orders.length > 0 && (
-        <div className="rounded-lg border bg-white">
+      {!loading && !error && filteredAndSorted.length > 0 && (
+        <div className="rounded-lg border bg-white overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>{t('orders.orderNumber')}</TableHead>
-                <TableHead>{t('orders.supplier')}</TableHead>
-                <TableHead>{t('orders.date')}</TableHead>
-                <TableHead>{t('orders.status')}</TableHead>
-                <TableHead className="text-right">{t('orders.items')}</TableHead>
-                <TableHead className="text-right">{t('orders.actions')}</TableHead>
+                <SortableHeader field="orderNumber">{t('orders.orderNumber')}</SortableHeader>
+                <SortableHeader field="supplier">{t('orders.supplier')}</SortableHeader>
+                <SortableHeader field="orderDate">{t('orders.date')}</SortableHeader>
+                <SortableHeader field="status">{t('orders.status')}</SortableHeader>
+                <SortableHeader field="daysOpen">{t('orders.daysOpen')}</SortableHeader>
+                <TableHead className="hidden md:table-cell">{t('orders.invoice')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {orders.map((order) => (
-                <TableRow
-                  key={order.id}
-                  className="cursor-pointer hover:bg-gray-50"
-                  onClick={() => router.push(`/orders/${order.id}`)}
-                >
-                  <TableCell className="font-medium font-mono">
-                    {order.orderNumber}
-                  </TableCell>
-                  <TableCell>{order.supplier.name}</TableCell>
-                  <TableCell>
-                    {new Date(order.orderDate).toLocaleDateString(localeMap[language] || 'en-US', {
-                      year: 'numeric',
-                      month: 'short',
-                      day: 'numeric',
-                    })}
-                  </TableCell>
-                  <TableCell>
-                    <Badge
-                      className={
-                        statusColors[order.status] ?? 'bg-gray-100 text-gray-800'
-                      }
-                    >
-                      {t(`labels.orderStatus.${order.status}`)}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {order._count.items}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="ghost" size="sm" asChild>
-                      <Link href={`/orders/${order.id}`}>
-                        <Eye className="h-4 w-4" />
-                        {t('orders.view')}
-                      </Link>
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {filteredAndSorted.map((order) => {
+                const daysOpen = getDaysOpen(order.orderDate)
+                const isOverdue = daysOpen > 7 && order.status !== 'RECEIVED' && order.status !== 'CANCELLED'
+
+                return (
+                  <TableRow
+                    key={order.id}
+                    className="cursor-pointer hover:bg-gray-50"
+                    onClick={() => router.push(`/orders/${order.id}`)}
+                  >
+                    <TableCell className="font-medium font-mono">
+                      {order.orderNumber}
+                    </TableCell>
+                    <TableCell>{order.supplier.name}</TableCell>
+                    <TableCell>
+                      {new Date(order.orderDate).toLocaleDateString(
+                        localeMap[language] || 'en-US',
+                        { year: 'numeric', month: 'short', day: 'numeric' },
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        className={statusColors[order.status] ?? 'bg-gray-100 text-gray-800'}
+                      >
+                        {t(`labels.orderStatus.${order.status as OrderStatusType}`)}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <span
+                        className={
+                          isOverdue
+                            ? 'font-bold text-red-600'
+                            : 'text-gray-500'
+                        }
+                      >
+                        {daysOpen}d
+                      </span>
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      {order.invoiceNumber ? (
+                        <Badge className="bg-green-100 text-green-800">
+                          {order.invoiceNumber}
+                        </Badge>
+                      ) : order.status === 'RECEIVED' || order.status === 'PARTIALLY_RECEIVED' ? (
+                        <span className="text-sm text-amber-600">{t('orders.noInvoice')}</span>
+                      ) : (
+                        <span className="text-sm text-gray-400">-</span>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                )
+              })}
             </TableBody>
           </Table>
         </div>

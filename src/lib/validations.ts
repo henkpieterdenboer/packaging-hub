@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { Role, Unit, ArticleGroup, Language } from '@/types'
+import { Role, Unit, ArticleGroup, Language, PreferredOrderUnit } from '@/types'
 
 // ─── Auth ────────────────────────────────────────────────────────────────────
 
@@ -9,6 +9,10 @@ export const loginSchema = z.object({
 })
 
 export type LoginInput = z.infer<typeof loginSchema>
+
+// ─── Shared enum values ─────────────────────────────────────────────────────
+
+const languageValues = Object.values(Language) as [string, ...string[]]
 
 // ─── Users ───────────────────────────────────────────────────────────────────
 
@@ -22,6 +26,7 @@ export const createUserSchema = z.object({
   roles: z
     .array(z.enum(roleValues))
     .min(1, 'At least one role is required'),
+  preferredLanguage: z.enum(languageValues).optional(),
 })
 
 export type CreateUserInput = z.infer<typeof createUserSchema>
@@ -36,6 +41,7 @@ export const updateUserSchema = z.object({
     .min(1, 'At least one role is required')
     .optional(),
   isActive: z.boolean().optional(),
+  preferredLanguage: z.enum(languageValues).optional(),
 })
 
 export type UpdateUserInput = z.infer<typeof updateUserSchema>
@@ -43,7 +49,6 @@ export type UpdateUserInput = z.infer<typeof updateUserSchema>
 // ─── Suppliers ───────────────────────────────────────────────────────────────
 
 const articleGroupValues = Object.values(ArticleGroup) as [string, ...string[]]
-const languageValues = Object.values(Language) as [string, ...string[]]
 
 export const createSupplierSchema = z.object({
   name: z.string().min(1, 'Supplier name is required'),
@@ -87,15 +92,20 @@ export type UpdateProductTypeInput = z.infer<typeof updateProductTypeSchema>
 
 // ─── Products ────────────────────────────────────────────────────────────────
 
+const preferredOrderUnitValues = Object.values(PreferredOrderUnit) as [string, ...string[]]
+
 export const createProductSchema = z.object({
   name: z.string().min(1, 'Product name is required'),
   articleCode: z.string().min(1, 'Article code is required'),
   supplierId: z.string().min(1, 'Supplier is required'),
   productTypeId: z.string().min(1).nullable().optional(),
   unitsPerBox: z.number().int().positive().nullable().optional(),
-  unitsPerPallet: z.number().int().positive().nullable().optional(),
+  boxesPerPallet: z.number().int().positive().nullable().optional(),
   pricePerUnit: z.number().positive().nullable().optional(),
   csrdRequirements: z.string().nullable().optional(),
+  remarks: z.string().nullable().optional(),
+  isCustom: z.boolean().optional(),
+  preferredOrderUnit: z.enum(preferredOrderUnitValues).nullable().optional(),
 })
 
 export type CreateProductInput = z.infer<typeof createProductSchema>
@@ -106,9 +116,12 @@ export const updateProductSchema = z.object({
   supplierId: z.string().min(1, 'Supplier is required').optional(),
   productTypeId: z.string().min(1).nullable().optional(),
   unitsPerBox: z.number().int().positive().nullable().optional(),
-  unitsPerPallet: z.number().int().positive().nullable().optional(),
+  boxesPerPallet: z.number().int().positive().nullable().optional(),
   pricePerUnit: z.number().positive().nullable().optional(),
   csrdRequirements: z.string().nullable().optional(),
+  remarks: z.string().nullable().optional(),
+  isCustom: z.boolean().optional(),
+  preferredOrderUnit: z.enum(preferredOrderUnitValues).nullable().optional(),
   isActive: z.boolean().optional(),
 })
 
@@ -207,3 +220,11 @@ export const receiveGoodsSchema = z.object({
 })
 
 export type ReceiveGoodsInput = z.infer<typeof receiveGoodsSchema>
+
+// ─── Invoice ────────────────────────────────────────────────────────────────
+
+export const matchInvoiceSchema = z.object({
+  invoiceNumber: z.string().min(1, 'Invoice number is required'),
+})
+
+export type MatchInvoiceInput = z.infer<typeof matchInvoiceSchema>

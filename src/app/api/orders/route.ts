@@ -23,33 +23,58 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url)
     const statusFilter = searchParams.get('status')
     const receivable = searchParams.get('receivable')
+    const invoiceable = searchParams.get('invoiceable')
 
-    const isAdmin = session.user.roles.includes('ADMIN')
+    // All authenticated users can view all orders (role access controlled by middleware)
+    const whereClause: Record<string, unknown> = {}
 
-    const whereClause: Record<string, unknown> = isAdmin
-      ? {}
-      : { employeeId: session.user.id }
-
-    if (receivable === 'true') {
+    if (invoiceable === 'true') {
+      // Show received and partially received orders for invoice matching
+      whereClause.status = { in: ['PARTIALLY_RECEIVED', 'RECEIVED'] }
+    } else if (receivable === 'true') {
       whereClause.status = { in: ['PENDING', 'PARTIALLY_RECEIVED'] }
     } else if (statusFilter && validStatuses.has(statusFilter)) {
       whereClause.status = statusFilter
     }
 
+    // Include items with product data for invoice view
+    const includeItems = invoiceable === 'true'
+
     const orders = await prisma.order.findMany({
       where: whereClause,
-      include: {
+      select: {
+        id: true,
+        orderNumber: true,
+        orderDate: true,
+        status: true,
+        notes: true,
+        invoiceNumber: true,
+        invoiceReceivedAt: true,
         employee: {
           select: { firstName: true, lastName: true },
         },
         supplier: {
           select: { name: true },
         },
-        _count: {
-          select: { items: true },
-        },
+        ...(includeItems
+          ? {
+              items: {
+                include: {
+                  product: {
+                    select: { name: true, articleCode: true, pricePerUnit: true },
+                  },
+                },
+              },
+            }
+          : {
+              _count: {
+                select: { items: true },
+              },
+            }),
       },
-      orderBy: { orderDate: 'desc' },
+      orderBy: invoiceable === 'true'
+        ? [{ supplier: { name: 'asc' } }, { orderDate: 'desc' }]
+        : { orderDate: 'desc' },
     })
 
     return NextResponse.json(orders)
@@ -135,7 +160,7 @@ export async function POST(request: Request) {
           items: {
             include: {
               product: {
-                select: { name: true, articleCode: true },
+                select: { name: true, articleCode: true, unitsPerBox: true, boxesPerPallet: true },
               },
             },
           },
@@ -171,6 +196,8 @@ export async function POST(request: Request) {
             name: item.product.name,
             articleCode: item.product.articleCode,
           },
+          unitsPerBox: item.product.unitsPerBox,
+          boxesPerPallet: item.product.boxesPerPallet,
         })),
         {
           name: order.supplier.name,

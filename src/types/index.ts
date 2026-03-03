@@ -2,14 +2,16 @@
 
 export const Role = {
   ADMIN: 'ADMIN',
-  USER: 'USER',
+  LOGISTICS: 'LOGISTICS',
+  FINANCE: 'FINANCE',
 } as const
 
 export type RoleType = (typeof Role)[keyof typeof Role]
 
 export const RoleLabels: Record<RoleType, string> = {
   ADMIN: 'Administrator',
-  USER: 'User',
+  LOGISTICS: 'Logistics',
+  FINANCE: 'Finance',
 }
 
 // ─── Order Status ────────────────────────────────────────────────────────────
@@ -98,6 +100,20 @@ export const LanguageLabels: Record<LanguageType, string> = {
   pl: 'Polski',
 }
 
+// ─── Preferred Order Unit ────────────────────────────────────────────────────
+
+export const PreferredOrderUnit = {
+  BOX: 'BOX',
+  PALLET: 'PALLET',
+} as const
+
+export type PreferredOrderUnitType = (typeof PreferredOrderUnit)[keyof typeof PreferredOrderUnit]
+
+export const PreferredOrderUnitLabels: Record<PreferredOrderUnitType, string> = {
+  BOX: 'Box',
+  PALLET: 'Pallet',
+}
+
 // ─── Audit Actions ───────────────────────────────────────────────────────────
 
 export const AuditAction = {
@@ -110,6 +126,7 @@ export const AuditAction = {
   PASSWORD_RESET: 'PASSWORD_RESET',
   ACCOUNT_ACTIVATED: 'ACCOUNT_ACTIVATED',
   GOODS_RECEIVED: 'GOODS_RECEIVED',
+  INVOICE_MATCHED: 'INVOICE_MATCHED',
 } as const
 
 export type AuditActionType = (typeof AuditAction)[keyof typeof AuditAction]

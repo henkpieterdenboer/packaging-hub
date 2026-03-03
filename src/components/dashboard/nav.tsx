@@ -8,12 +8,13 @@ import {
   LayoutDashboard,
   Package,
   ShoppingCart,
-  PlusCircle,
+  ShoppingBag,
   Users,
   Truck,
   PackageOpen,
   PackageCheck,
   Mail,
+  FileText,
   Settings,
   LogOut,
   Menu,
@@ -22,25 +23,32 @@ import { Separator } from '@/components/ui/separator'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { cn } from '@/lib/utils'
 import { useTranslation } from '@/i18n/use-translation'
+import { useCart } from '@/lib/cart-context'
 import { SupplyHubLogo } from '@/components/supply-hub-logo'
 import { LanguageSwitcher } from '@/i18n/language-switcher'
 
-function NavContent({ pathname, session, isAdmin, onNavigate }: {
+function NavContent({ pathname, session, roles, onNavigate }: {
   pathname: string
   session: ReturnType<typeof useSession>['data']
-  isAdmin: boolean
+  roles: string[]
   onNavigate?: () => void
 }) {
   const { t } = useTranslation()
+  const { totalItems } = useCart()
+
+  const isAdmin = roles.includes('ADMIN')
+  const canOrder = roles.includes('ADMIN') || roles.includes('LOGISTICS')
+  const canFinance = roles.includes('ADMIN') || roles.includes('FINANCE')
 
   const mainNavItems = [
-    { label: t('nav.dashboard'), href: '/dashboard', icon: LayoutDashboard },
-    { label: t('nav.products'), href: '/products', icon: Package },
-    { label: t('nav.orders'), href: '/orders', icon: ShoppingCart },
-    { label: t('nav.newOrder'), href: '/orders/new', icon: PlusCircle },
-    { label: t('nav.goodsReceipt'), href: '/receiving', icon: PackageCheck },
-    { label: t('nav.emails'), href: '/emails', icon: Mail },
-  ]
+    { label: t('nav.dashboard'), href: '/dashboard', icon: LayoutDashboard, show: true, badge: 0 },
+    { label: t('nav.newOrder'), href: '/products', icon: ShoppingCart, show: canOrder, badge: 0 },
+    { label: t('nav.cart'), href: '/cart', icon: ShoppingBag, show: canOrder, badge: totalItems },
+    { label: t('nav.orders'), href: '/orders', icon: Package, show: true, badge: 0 },
+    { label: t('nav.goodsReceipt'), href: '/receiving', icon: PackageCheck, show: canOrder, badge: 0 },
+    { label: t('nav.invoices'), href: '/invoices', icon: FileText, show: canFinance, badge: 0 },
+    { label: t('nav.emails'), href: '/emails', icon: Mail, show: true, badge: 0 },
+  ].filter(item => item.show)
 
   const adminNavItems = [
     { label: t('nav.employees'), href: '/admin/employees', icon: Users },
@@ -82,6 +90,11 @@ function NavContent({ pathname, session, isAdmin, onNavigate }: {
             >
               <Icon className="h-5 w-5 shrink-0" />
               {item.label}
+              {item.badge > 0 && (
+                <span className="ml-auto rounded-full bg-blue-600 px-1.5 py-0.5 text-xs font-medium text-white">
+                  {item.badge}
+                </span>
+              )}
             </Link>
           )
         })}
@@ -163,7 +176,7 @@ export default function Nav() {
   const [open, setOpen] = useState(false)
   const { t } = useTranslation()
 
-  const isAdmin = session?.user?.roles?.includes('ADMIN')
+  const roles = (session?.user?.roles || []) as string[]
 
   const handleOpenChange = useCallback((value: boolean) => {
     setOpen(value)
@@ -173,7 +186,7 @@ export default function Nav() {
     <>
       {/* Desktop sidebar */}
       <aside className="hidden md:flex w-64 flex-col bg-gray-900 text-white">
-        <NavContent pathname={pathname} session={session} isAdmin={!!isAdmin} />
+        <NavContent pathname={pathname} session={session} roles={roles} />
       </aside>
 
       {/* Mobile top bar + sheet */}
@@ -198,7 +211,7 @@ export default function Nav() {
             showCloseButton={false}
             className="w-64 border-r-0 bg-gray-900 p-0 text-white"
           >
-            <NavContent pathname={pathname} session={session} isAdmin={!!isAdmin} onNavigate={() => setOpen(false)} />
+            <NavContent pathname={pathname} session={session} roles={roles} onNavigate={() => setOpen(false)} />
           </SheetContent>
         </Sheet>
       </div>

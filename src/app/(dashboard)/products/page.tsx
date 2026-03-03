@@ -3,7 +3,20 @@
 import { useEffect, useState, useMemo } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { useCart } from '@/lib/cart-context'
+import { useTranslation } from '@/i18n/use-translation'
+import { localeMap } from '@/i18n'
+import { toast } from 'sonner'
+import { Unit } from '@/types'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
@@ -14,31 +27,17 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
-import { Button } from '@/components/ui/button'
-import {
   Package,
   Search,
-  LayoutGrid,
-  List,
   ArrowUp,
   ArrowDown,
   ShoppingCart,
+  AlertTriangle,
 } from 'lucide-react'
-import Link from 'next/link'
-import { useTranslation } from '@/i18n/use-translation'
-import { localeMap } from '@/i18n'
 
 interface Supplier {
   id: string
   name: string
-  articleGroup: string
 }
 
 interface ProductType {
@@ -51,70 +50,61 @@ interface Product {
   name: string
   articleCode: string
   supplierId: string
-  productTypeId: string | null
   unitsPerBox: number | null
-  unitsPerPallet: number | null
+  boxesPerPallet: number | null
   pricePerUnit: number | null
-  supplier: {
-    id: string
-    name: string
-  }
-  productType: {
-    id: string
-    name: string
-  } | null
+  preferredOrderUnit: string | null
+  supplier: { id: string; name: string }
+  productType: { id: string; name: string } | null
 }
 
-export default function ProductCatalogPage() {
+type PendingOrders = Record<
+  string,
+  Array<{ orderNumber: string; employeeName: string }>
+>
+
+export default function NewOrderPage() {
   const { status } = useSession()
   const router = useRouter()
   const { t, language } = useTranslation()
+  const { addItem } = useCart()
 
   const [products, setProducts] = useState<Product[]>([])
   const [suppliers, setSuppliers] = useState<Supplier[]>([])
   const [productTypes, setProductTypes] = useState<ProductType[]>([])
-  const [selectedSupplierId, setSelectedSupplierId] = useState<string>('')
-  const [selectedProductTypeId, setSelectedProductTypeId] = useState<string>('')
+  const [pendingOrders, setPendingOrders] = useState<PendingOrders>({})
+  const [selectedSupplierId, setSelectedSupplierId] = useState('')
+  const [selectedProductTypeId, setSelectedProductTypeId] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
-  const [sortField, setSortField] = useState<string>('name')
+  const [sortField, setSortField] = useState('name')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
 
+  // Per-product quantity and unit overrides (only stored when user changes from defaults)
+  const [qtyOverrides, setQtyOverrides] = useState<Record<string, number>>({})
+  const [unitOverrides, setUnitOverrides] = useState<Record<string, string>>({})
+
   useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/login')
-    }
+    if (status === 'unauthenticated') router.push('/login')
   }, [status, router])
 
   useEffect(() => {
-    async function fetchSuppliers() {
+    async function fetchData() {
       try {
-        const res = await fetch('/api/suppliers')
-        if (!res.ok) throw new Error('Failed to fetch suppliers')
-        const data = await res.json()
-        setSuppliers(data)
+        const [suppRes, typeRes, pendingRes] = await Promise.all([
+          fetch('/api/suppliers'),
+          fetch('/api/product-types'),
+          fetch('/api/products/pending-orders'),
+        ])
+        if (suppRes.ok) setSuppliers(await suppRes.json())
+        if (typeRes.ok) setProductTypes(await typeRes.json())
+        if (pendingRes.ok) setPendingOrders(await pendingRes.json())
       } catch (err) {
-        console.error('Failed to fetch suppliers:', err)
+        console.error('Failed to fetch data:', err)
       }
     }
-
-    async function fetchProductTypes() {
-      try {
-        const res = await fetch('/api/product-types')
-        if (!res.ok) throw new Error('Failed to fetch product types')
-        const data = await res.json()
-        setProductTypes(data)
-      } catch (err) {
-        console.error('Failed to fetch product types:', err)
-      }
-    }
-
-    if (status === 'authenticated') {
-      fetchSuppliers()
-      fetchProductTypes()
-    }
+    if (status === 'authenticated') fetchData()
   }, [status])
 
   useEffect(() => {
@@ -124,13 +114,13 @@ export default function ProductCatalogPage() {
       try {
         const params = new URLSearchParams()
         if (selectedSupplierId) params.set('supplierId', selectedSupplierId)
-        if (selectedProductTypeId) params.set('productTypeId', selectedProductTypeId)
+        if (selectedProductTypeId)
+          params.set('productTypeId', selectedProductTypeId)
         const query = params.toString()
         const url = query ? `/api/products?${query}` : '/api/products'
         const res = await fetch(url)
         if (!res.ok) throw new Error('Failed to fetch products')
-        const data = await res.json()
-        setProducts(data)
+        setProducts(await res.json())
       } catch (err) {
         setError('Failed to load products. Please try again.')
         console.error('Failed to fetch products:', err)
@@ -138,25 +128,32 @@ export default function ProductCatalogPage() {
         setLoading(false)
       }
     }
-
-    if (status === 'authenticated') {
-      fetchProducts()
-    }
+    if (status === 'authenticated') fetchProducts()
   }, [status, selectedSupplierId, selectedProductTypeId])
 
+  // Derive qty/unit for a product (override or defaults)
+  function getQty(productId: string): number {
+    return qtyOverrides[productId] ?? 1
+  }
+
+  function getUnit(product: Product): string {
+    return unitOverrides[product.id] ?? product.preferredOrderUnit ?? 'PIECE'
+  }
+
+  // Filtering
   const filteredProducts = useMemo(() => {
     if (!searchQuery.trim()) return products
-
-    const query = searchQuery.toLowerCase()
+    const q = searchQuery.toLowerCase()
     return products.filter(
-      (product) =>
-        product.name.toLowerCase().includes(query) ||
-        product.articleCode.toLowerCase().includes(query),
+      (p) =>
+        p.name.toLowerCase().includes(q) ||
+        p.articleCode.toLowerCase().includes(q),
     )
   }, [products, searchQuery])
 
+  // Sorting
   const sortedProducts = useMemo(() => {
-    const sorted = [...filteredProducts].sort((a, b) => {
+    return [...filteredProducts].sort((a, b) => {
       let aVal: string | number | null
       let bVal: string | number | null
 
@@ -172,7 +169,6 @@ export default function ProductCatalogPage() {
         case 'pricePerUnit':
           aVal = a.pricePerUnit
           bVal = b.pricePerUnit
-          // Null values sort to the end regardless of direction
           if (aVal === null && bVal === null) return 0
           if (aVal === null) return 1
           if (bVal === null) return -1
@@ -186,14 +182,12 @@ export default function ProductCatalogPage() {
 
       if (aVal === null || bVal === null) return 0
 
-      let comparison = 0
-      if (aVal < bVal) comparison = -1
-      if (aVal > bVal) comparison = 1
+      let cmp = 0
+      if (aVal < bVal) cmp = -1
+      if (aVal > bVal) cmp = 1
 
-      return sortDirection === 'asc' ? comparison : -comparison
+      return sortDirection === 'asc' ? cmp : -cmp
     })
-
-    return sorted
   }, [filteredProducts, sortField, sortDirection])
 
   function handleTableHeaderClick(field: string) {
@@ -221,6 +215,34 @@ export default function ProductCatalogPage() {
     }).format(price)
   }
 
+  function handleAddToCart(product: Product) {
+    const qty = getQty(product.id)
+    const unit = getUnit(product)
+    if (qty < 1) return
+
+    addItem({
+      productId: product.id,
+      productName: product.name,
+      articleCode: product.articleCode,
+      supplierId: product.supplierId,
+      supplierName: product.supplier.name,
+      quantity: qty,
+      unit,
+      unitsPerBox: product.unitsPerBox,
+      boxesPerPallet: product.boxesPerPallet,
+      pricePerUnit: product.pricePerUnit,
+    })
+
+    toast.success(t('cart.addedToCart', { product: product.name }))
+
+    // Reset quantity to 1
+    setQtyOverrides((prev) => {
+      const next = { ...prev }
+      delete next[product.id]
+      return next
+    })
+  }
+
   if (status === 'loading') {
     return (
       <div className="flex items-center justify-center py-12">
@@ -235,33 +257,11 @@ export default function ProductCatalogPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight text-gray-900">
-            {t('products.title')}
-          </h2>
-          <p className="mt-1 text-sm text-gray-500">
-            {t('products.subtitle')}
-          </p>
-        </div>
-        <div className="flex items-center gap-1">
-          <Button
-            variant={viewMode === 'grid' ? 'default' : 'outline'}
-            size="icon-sm"
-            onClick={() => setViewMode('grid')}
-            title={t('common.gridView')}
-          >
-            <LayoutGrid className="h-4 w-4" />
-          </Button>
-          <Button
-            variant={viewMode === 'list' ? 'default' : 'outline'}
-            size="icon-sm"
-            onClick={() => setViewMode('list')}
-            title={t('common.listView')}
-          >
-            <List className="h-4 w-4" />
-          </Button>
-        </div>
+      <div>
+        <h2 className="text-3xl font-bold tracking-tight text-gray-900">
+          {t('products.title')}
+        </h2>
+        <p className="mt-1 text-sm text-gray-500">{t('products.subtitle')}</p>
       </div>
 
       {/* Filters */}
@@ -341,42 +341,9 @@ export default function ProductCatalogPage() {
       {/* Loading State */}
       {loading && (
         <div className="flex items-center justify-center py-12">
-          <p className="text-sm text-gray-500">{t('products.loadingProducts')}</p>
-        </div>
-      )}
-
-      {/* Sort controls for grid view */}
-      {viewMode === 'grid' && !loading && !error && filteredProducts.length > 0 && (
-        <div className="flex items-center gap-2">
-          <Label className="text-sm text-gray-500 whitespace-nowrap">{t('common.sortBy')}</Label>
-          <Select
-            value={sortField}
-            onValueChange={(value) => setSortField(value)}
-          >
-            <SelectTrigger className="w-44">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="name">{t('products.name')}</SelectItem>
-              <SelectItem value="articleCode">{t('products.articleCode')}</SelectItem>
-              <SelectItem value="supplier">{t('products.supplier')}</SelectItem>
-              <SelectItem value="pricePerUnit">{t('common.price')}</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button
-            variant="outline"
-            size="icon-sm"
-            onClick={() =>
-              setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'))
-            }
-            title={sortDirection === 'asc' ? t('common.ascending') : t('common.descending')}
-          >
-            {sortDirection === 'asc' ? (
-              <ArrowUp className="h-4 w-4" />
-            ) : (
-              <ArrowDown className="h-4 w-4" />
-            )}
-          </Button>
+          <p className="text-sm text-gray-500">
+            {t('products.loadingProducts')}
+          </p>
         </div>
       )}
 
@@ -395,74 +362,8 @@ export default function ProductCatalogPage() {
         </div>
       )}
 
-      {/* Product Grid */}
-      {!loading && !error && sortedProducts.length > 0 && viewMode === 'grid' && (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {sortedProducts.map((product) => (
-            <Card key={product.id}>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base leading-snug">
-                  {product.name}
-                </CardTitle>
-                <p className="text-xs text-gray-500 font-mono">
-                  {product.articleCode}
-                </p>
-              </CardHeader>
-              <CardContent className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-500">{t('products.supplier')}</span>
-                  <span className="font-medium text-gray-900">
-                    {product.supplier.name}
-                  </span>
-                </div>
-                {product.productType && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">{t('products.type')}</span>
-                    <span className="font-medium text-gray-900">
-                      {product.productType.name}
-                    </span>
-                  </div>
-                )}
-                {product.unitsPerBox != null && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">{t('products.unitsPerBox')}</span>
-                    <span className="font-medium text-gray-900">
-                      {product.unitsPerBox}
-                    </span>
-                  </div>
-                )}
-                {product.unitsPerPallet != null && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">{t('products.unitsPerPallet')}</span>
-                    <span className="font-medium text-gray-900">
-                      {product.unitsPerPallet}
-                    </span>
-                  </div>
-                )}
-                {product.pricePerUnit != null && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">{t('products.pricePerUnit')}</span>
-                    <span className="font-medium text-gray-900">
-                      {formatCurrency(product.pricePerUnit)}
-                    </span>
-                  </div>
-                )}
-                <div className="pt-2">
-                  <Button variant="outline" size="sm" className="w-full" asChild>
-                    <Link href={`/orders/new?supplierId=${product.supplierId}&productId=${product.id}`}>
-                      <ShoppingCart className="h-3.5 w-3.5" />
-                      {t('products.order')}
-                    </Link>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
-
-      {/* Product List */}
-      {!loading && !error && sortedProducts.length > 0 && viewMode === 'list' && (
+      {/* Product Table */}
+      {!loading && !error && sortedProducts.length > 0 && (
         <div className="rounded-lg border bg-white overflow-x-auto">
           <Table>
             <TableHeader>
@@ -471,64 +372,144 @@ export default function ProductCatalogPage() {
                   className="cursor-pointer select-none"
                   onClick={() => handleTableHeaderClick('name')}
                 >
-                  {t('products.name')}{renderSortIcon('name')}
+                  {t('products.name')}
+                  {renderSortIcon('name')}
                 </TableHead>
                 <TableHead
-                  className="cursor-pointer select-none"
+                  className="cursor-pointer select-none hidden sm:table-cell"
                   onClick={() => handleTableHeaderClick('articleCode')}
                 >
-                  {t('products.articleCode')}{renderSortIcon('articleCode')}
+                  {t('products.articleCode')}
+                  {renderSortIcon('articleCode')}
                 </TableHead>
                 <TableHead
-                  className="cursor-pointer select-none"
+                  className="cursor-pointer select-none hidden md:table-cell"
                   onClick={() => handleTableHeaderClick('supplier')}
                 >
-                  {t('products.supplier')}{renderSortIcon('supplier')}
+                  {t('products.supplier')}
+                  {renderSortIcon('supplier')}
                 </TableHead>
-                <TableHead>{t('products.type')}</TableHead>
-                <TableHead>{t('products.unitsPerBox')}</TableHead>
-                <TableHead>{t('products.unitsPerPallet')}</TableHead>
+                <TableHead className="hidden lg:table-cell">
+                  {t('products.type')}
+                </TableHead>
                 <TableHead
-                  className="cursor-pointer select-none"
+                  className="cursor-pointer select-none hidden sm:table-cell"
                   onClick={() => handleTableHeaderClick('pricePerUnit')}
                 >
-                  {t('common.price')}{renderSortIcon('pricePerUnit')}
+                  {t('products.pricePerUnit')}
+                  {renderSortIcon('pricePerUnit')}
                 </TableHead>
-                <TableHead className="text-right">{t('products.action')}</TableHead>
+                <TableHead className="w-20">{t('cart.quantity')}</TableHead>
+                <TableHead className="w-28">{t('cart.unit')}</TableHead>
+                <TableHead className="w-28"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {sortedProducts.map((product) => (
-                <TableRow key={product.id}>
-                  <TableCell className="font-medium">{product.name}</TableCell>
-                  <TableCell className="font-mono text-xs text-gray-500">
-                    {product.articleCode}
-                  </TableCell>
-                  <TableCell>{product.supplier.name}</TableCell>
-                  <TableCell>{product.productType?.name ?? '-'}</TableCell>
-                  <TableCell>
-                    {product.unitsPerBox != null ? product.unitsPerBox : '-'}
-                  </TableCell>
-                  <TableCell>
-                    {product.unitsPerPallet != null
-                      ? product.unitsPerPallet
-                      : '-'}
-                  </TableCell>
-                  <TableCell>
-                    {product.pricePerUnit != null
-                      ? formatCurrency(product.pricePerUnit)
-                      : '-'}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="ghost" size="sm" asChild>
-                      <Link href={`/orders/new?supplierId=${product.supplierId}&productId=${product.id}`}>
+              {sortedProducts.map((product) => {
+                const pending = pendingOrders[product.id]
+                const qty = getQty(product.id)
+                const unit = getUnit(product)
+
+                return (
+                  <TableRow
+                    key={product.id}
+                    className={pending ? 'border-l-4 border-l-amber-400' : ''}
+                  >
+                    <TableCell>
+                      <div>
+                        <span className="font-medium">{product.name}</span>
+                        {/* Show article code + supplier on mobile */}
+                        <span className="block text-xs text-gray-500 sm:hidden">
+                          {product.articleCode}
+                        </span>
+                        <span className="block text-xs text-gray-400 md:hidden sm:block">
+                          {product.supplier.name}
+                        </span>
+                        {pending && (
+                          <div className="mt-1 flex items-start gap-1 text-xs text-amber-700">
+                            <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" />
+                            <span>
+                              {t('cart.pendingWarning')}{' '}
+                              {pending
+                                .map(
+                                  (p) =>
+                                    `${p.orderNumber} (${p.employeeName})`,
+                                )
+                                .join(', ')}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell className="hidden sm:table-cell font-mono text-xs text-gray-500">
+                      {product.articleCode}
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      {product.supplier.name}
+                    </TableCell>
+                    <TableCell className="hidden lg:table-cell">
+                      {product.productType?.name ?? '-'}
+                    </TableCell>
+                    <TableCell className="hidden sm:table-cell">
+                      {product.pricePerUnit != null
+                        ? formatCurrency(product.pricePerUnit)
+                        : '-'}
+                    </TableCell>
+                    <TableCell>
+                      <Input
+                        type="number"
+                        min={1}
+                        value={qty}
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value, 10)
+                          if (!isNaN(val) && val > 0) {
+                            setQtyOverrides((prev) => ({
+                              ...prev,
+                              [product.id]: val,
+                            }))
+                          }
+                        }}
+                        className="w-16 h-8"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Select
+                        value={unit}
+                        onValueChange={(value) => {
+                          setUnitOverrides((prev) => ({
+                            ...prev,
+                            [product.id]: value,
+                          }))
+                        }}
+                      >
+                        <SelectTrigger className="w-24 h-8">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Object.entries(Unit).map(([key, value]) => (
+                            <SelectItem key={key} value={value}>
+                              {t(`labels.units.${key}`)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleAddToCart(product)}
+                        className="h-8"
+                      >
                         <ShoppingCart className="h-3.5 w-3.5" />
-                        {t('products.order')}
-                      </Link>
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
+                        <span className="hidden sm:inline">
+                          {t('cart.addToCart')}
+                        </span>
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                )
+              })}
             </TableBody>
           </Table>
         </div>

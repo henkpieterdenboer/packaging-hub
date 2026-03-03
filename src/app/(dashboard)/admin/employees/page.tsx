@@ -13,6 +13,13 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
   Table,
   TableBody,
   TableCell,
@@ -22,9 +29,9 @@ import {
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Plus, Pencil } from 'lucide-react'
+import { Plus, Pencil, KeyRound, MailPlus } from 'lucide-react'
 import { toast } from 'sonner'
-import { Role, RoleType } from '@/types'
+import { Role, RoleType, Language, LanguageType } from '@/types'
 import { useTranslation } from '@/i18n/use-translation'
 
 // ---------------------------------------------------------------------------
@@ -39,6 +46,7 @@ interface Employee {
   lastName: string
   roles: string[]
   isActive: boolean
+  preferredLanguage: string
   createdAt: string
 }
 
@@ -49,6 +57,7 @@ interface EmployeeFormData {
   lastName: string
   roles: RoleType[]
   isActive: boolean
+  preferredLanguage: LanguageType
 }
 
 const emptyForm: EmployeeFormData = {
@@ -58,6 +67,7 @@ const emptyForm: EmployeeFormData = {
   lastName: '',
   roles: [],
   isActive: true,
+  preferredLanguage: 'en',
 }
 
 // ---------------------------------------------------------------------------
@@ -70,8 +80,10 @@ export default function EmployeesPage() {
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
+  const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null)
   const [form, setForm] = useState<EmployeeFormData>(emptyForm)
   const [submitting, setSubmitting] = useState(false)
+  const [actionLoading, setActionLoading] = useState(false)
 
   // -- Fetch ----------------------------------------------------------------
 
@@ -97,12 +109,14 @@ export default function EmployeesPage() {
 
   function openCreate() {
     setEditingId(null)
+    setEditingEmployee(null)
     setForm(emptyForm)
     setDialogOpen(true)
   }
 
   function openEdit(emp: Employee) {
     setEditingId(emp.id)
+    setEditingEmployee(emp)
     setForm({
       email: emp.email,
       firstName: emp.firstName,
@@ -110,6 +124,7 @@ export default function EmployeesPage() {
       lastName: emp.lastName,
       roles: emp.roles as RoleType[],
       isActive: emp.isActive,
+      preferredLanguage: (emp.preferredLanguage as LanguageType) || 'en',
     })
     setDialogOpen(true)
   }
@@ -147,6 +162,7 @@ export default function EmployeesPage() {
         middleName: form.middleName || null,
         lastName: form.lastName,
         roles: form.roles,
+        preferredLanguage: form.preferredLanguage,
         ...(editingId ? { isActive: form.isActive } : {}),
       }
 
@@ -183,6 +199,64 @@ export default function EmployeesPage() {
       )
     } finally {
       setSubmitting(false)
+    }
+  }
+
+  // -- Actions ---------------------------------------------------------------
+
+  async function handleResetPassword() {
+    if (!editingId) return
+    if (!confirm(t('admin.employees.resetPasswordConfirm'))) return
+
+    setActionLoading(true)
+    try {
+      const res = await fetch(`/api/admin/employees/${editingId}/reset-password`, {
+        method: 'POST',
+      })
+      const body = await res.json().catch(() => null)
+      if (!res.ok) throw new Error(body?.error ?? 'Request failed')
+
+      toast.success(t('admin.employees.resetPasswordSuccess'), {
+        duration: body?.etherealUrl ? 15000 : 4000,
+        action: body?.etherealUrl
+          ? {
+              label: t('admin.employees.viewEmail'),
+              onClick: () => window.open(body.etherealUrl, '_blank'),
+            }
+          : undefined,
+      })
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Something went wrong')
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  async function handleResendActivation() {
+    if (!editingId) return
+    if (!confirm(t('admin.employees.resendActivationConfirm'))) return
+
+    setActionLoading(true)
+    try {
+      const res = await fetch(`/api/admin/employees/${editingId}/resend-activation`, {
+        method: 'POST',
+      })
+      const body = await res.json().catch(() => null)
+      if (!res.ok) throw new Error(body?.error ?? 'Request failed')
+
+      toast.success(t('admin.employees.resendActivationSuccess'), {
+        duration: body?.etherealUrl ? 15000 : 4000,
+        action: body?.etherealUrl
+          ? {
+              label: t('admin.employees.viewEmail'),
+              onClick: () => window.open(body.etherealUrl, '_blank'),
+            }
+          : undefined,
+      })
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Something went wrong')
+    } finally {
+      setActionLoading(false)
     }
   }
 
@@ -333,6 +407,28 @@ export default function EmployeesPage() {
               />
             </div>
 
+            {/* Preferred Language */}
+            <div className="grid gap-2">
+              <Label htmlFor="preferredLanguage">{t('admin.employees.preferredLanguage')}</Label>
+              <Select
+                value={form.preferredLanguage}
+                onValueChange={(value) =>
+                  setForm((prev) => ({ ...prev, preferredLanguage: value as LanguageType }))
+                }
+              >
+                <SelectTrigger id="preferredLanguage">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {(Object.values(Language) as LanguageType[]).map((lang) => (
+                    <SelectItem key={lang} value={lang}>
+                      {lang === 'en' ? 'English' : lang === 'nl' ? 'Nederlands' : 'Polski'}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             {/* Roles */}
             <div className="grid gap-2">
               <Label>{t('admin.employees.rolesLabel')}</Label>
@@ -366,6 +462,33 @@ export default function EmployeesPage() {
                   }
                 />
                 <Label htmlFor="isActive">{t('admin.employees.activeLabel')}</Label>
+              </div>
+            )}
+
+            {/* Action buttons (edit only) */}
+            {editingId && editingEmployee && (
+              <div className="flex gap-2 border-t pt-4">
+                {editingEmployee.isActive ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleResetPassword}
+                    disabled={actionLoading}
+                  >
+                    <KeyRound className="mr-2 h-4 w-4" />
+                    {t('admin.employees.resetPassword')}
+                  </Button>
+                ) : (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleResendActivation}
+                    disabled={actionLoading}
+                  >
+                    <MailPlus className="mr-2 h-4 w-4" />
+                    {t('admin.employees.resendActivation')}
+                  </Button>
+                )}
               </div>
             )}
           </div>

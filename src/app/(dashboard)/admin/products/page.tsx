@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
@@ -30,8 +30,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Plus, Pencil, Check, X } from 'lucide-react'
+import { Plus, Pencil, Check, X, ArrowUp, ArrowDown, Download, Upload, Search } from 'lucide-react'
 import { toast } from 'sonner'
+import { PreferredOrderUnit, PreferredOrderUnitType } from '@/types'
 import { useTranslation } from '@/i18n/use-translation'
 
 // ---------------------------------------------------------------------------
@@ -59,9 +60,12 @@ interface Product {
   supplier: { id: string; name: string }
   productType: { id: string; name: string } | null
   unitsPerBox: number | null
-  unitsPerPallet: number | null
+  boxesPerPallet: number | null
   pricePerUnit: number | null
   csrdRequirements: string | null
+  remarks: string | null
+  isCustom: boolean
+  preferredOrderUnit: string | null
   isActive: boolean
   createdAt: string
 }
@@ -72,9 +76,12 @@ interface ProductFormData {
   supplierId: string
   productTypeId: string
   unitsPerBox: string
-  unitsPerPallet: string
+  boxesPerPallet: string
   pricePerUnit: string
   csrdRequirements: string
+  remarks: string
+  isCustom: boolean
+  preferredOrderUnit: string
   isActive: boolean
 }
 
@@ -84,9 +91,12 @@ const emptyForm: ProductFormData = {
   supplierId: '',
   productTypeId: '',
   unitsPerBox: '',
-  unitsPerPallet: '',
+  boxesPerPallet: '',
   pricePerUnit: '',
   csrdRequirements: '',
+  remarks: '',
+  isCustom: false,
+  preferredOrderUnit: '',
   isActive: true,
 }
 
@@ -104,6 +114,17 @@ export default function ProductsPage() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState<ProductFormData>(emptyForm)
   const [submitting, setSubmitting] = useState(false)
+
+  // Filters + sorting
+  const [filterSupplier, setFilterSupplier] = useState('')
+  const [filterType, setFilterType] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [sortField, setSortField] = useState<string>('name')
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
+
+  // Import
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [importing, setImporting] = useState(false)
 
   // Product type inline editing state
   const [newTypeName, setNewTypeName] = useState('')
@@ -154,6 +175,103 @@ export default function ProductsPage() {
     fetchSuppliers()
     fetchProductTypes()
   }, [fetchProducts, fetchSuppliers, fetchProductTypes])
+
+  // -- Filtered + sorted products -------------------------------------------
+
+  const filteredProducts = useMemo(() => {
+    let result = products
+
+    if (filterSupplier) {
+      result = result.filter((p) => p.supplierId === filterSupplier)
+    }
+    if (filterType) {
+      result = result.filter((p) => p.productTypeId === filterType)
+    }
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase()
+      result = result.filter(
+        (p) =>
+          p.name.toLowerCase().includes(q) ||
+          (p.articleCode && p.articleCode.toLowerCase().includes(q)),
+      )
+    }
+
+    return result
+  }, [products, filterSupplier, filterType, searchQuery])
+
+  const sortedProducts = useMemo(() => {
+    const sorted = [...filteredProducts].sort((a, b) => {
+      let aVal: string | number | null
+      let bVal: string | number | null
+
+      switch (sortField) {
+        case 'articleCode':
+          aVal = (a.articleCode || '').toLowerCase()
+          bVal = (b.articleCode || '').toLowerCase()
+          break
+        case 'supplier':
+          aVal = a.supplier.name.toLowerCase()
+          bVal = b.supplier.name.toLowerCase()
+          break
+        case 'type':
+          aVal = (a.productType?.name || '').toLowerCase()
+          bVal = (b.productType?.name || '').toLowerCase()
+          break
+        case 'unitsPerBox':
+          aVal = a.unitsPerBox
+          bVal = b.unitsPerBox
+          if (aVal === null && bVal === null) return 0
+          if (aVal === null) return 1
+          if (bVal === null) return -1
+          break
+        case 'boxesPerPallet':
+          aVal = a.boxesPerPallet
+          bVal = b.boxesPerPallet
+          if (aVal === null && bVal === null) return 0
+          if (aVal === null) return 1
+          if (bVal === null) return -1
+          break
+        case 'pricePerUnit':
+          aVal = a.pricePerUnit
+          bVal = b.pricePerUnit
+          if (aVal === null && bVal === null) return 0
+          if (aVal === null) return 1
+          if (bVal === null) return -1
+          break
+        case 'name':
+        default:
+          aVal = a.name.toLowerCase()
+          bVal = b.name.toLowerCase()
+          break
+      }
+
+      if (aVal === null || bVal === null) return 0
+      let comparison = 0
+      if (aVal < bVal) comparison = -1
+      if (aVal > bVal) comparison = 1
+      return sortDirection === 'asc' ? comparison : -comparison
+    })
+
+    return sorted
+  }, [filteredProducts, sortField, sortDirection])
+
+  function handleSort(field: string) {
+    if (sortField === field) {
+      setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'))
+    } else {
+      setSortField(field)
+      setSortDirection('asc')
+    }
+  }
+
+  function renderSortIcon(field: string) {
+    if (sortField !== field) return null
+    return sortDirection === 'asc' ? (
+      <ArrowUp className="ml-1 inline h-3 w-3" />
+    ) : (
+      <ArrowDown className="ml-1 inline h-3 w-3" />
+    )
+  }
 
   // -- Product Type handlers ------------------------------------------------
 
@@ -254,9 +372,12 @@ export default function ProductsPage() {
       supplierId: product.supplierId,
       productTypeId: product.productTypeId ?? '',
       unitsPerBox: product.unitsPerBox?.toString() ?? '',
-      unitsPerPallet: product.unitsPerPallet?.toString() ?? '',
+      boxesPerPallet: product.boxesPerPallet?.toString() ?? '',
       pricePerUnit: product.pricePerUnit?.toString() ?? '',
       csrdRequirements: product.csrdRequirements ?? '',
+      remarks: product.remarks ?? '',
+      isCustom: product.isCustom,
+      preferredOrderUnit: product.preferredOrderUnit ?? '',
       isActive: product.isActive,
     })
     setDialogOpen(true)
@@ -277,24 +398,27 @@ export default function ProductsPage() {
         name: form.name,
         articleCode: form.articleCode,
         supplierId: form.supplierId,
+        isCustom: form.isCustom,
         ...(editingId ? { isActive: form.isActive } : {}),
       }
 
-      // productTypeId: always send (null to clear, string to set)
       payload.productTypeId = form.productTypeId || null
+      payload.preferredOrderUnit = form.preferredOrderUnit || null
 
-      // Optional fields: only include when filled in, or null when editing (to allow clearing)
       if (form.unitsPerBox) payload.unitsPerBox = Number(form.unitsPerBox)
       else if (editingId) payload.unitsPerBox = null
 
-      if (form.unitsPerPallet) payload.unitsPerPallet = Number(form.unitsPerPallet)
-      else if (editingId) payload.unitsPerPallet = null
+      if (form.boxesPerPallet) payload.boxesPerPallet = Number(form.boxesPerPallet)
+      else if (editingId) payload.boxesPerPallet = null
 
       if (form.pricePerUnit) payload.pricePerUnit = Number(form.pricePerUnit)
       else if (editingId) payload.pricePerUnit = null
 
       if (form.csrdRequirements) payload.csrdRequirements = form.csrdRequirements
       else if (editingId) payload.csrdRequirements = null
+
+      if (form.remarks) payload.remarks = form.remarks
+      else if (editingId) payload.remarks = null
 
       const url = editingId
         ? `/api/admin/products/${editingId}`
@@ -330,6 +454,184 @@ export default function ProductsPage() {
     }
   }
 
+  // -- Excel Export ----------------------------------------------------------
+
+  async function handleExport() {
+    const ExcelJS = (await import('exceljs')).default
+    const workbook = new ExcelJS.Workbook()
+    const sheet = workbook.addWorksheet('Products')
+
+    sheet.columns = [
+      { header: 'Name', key: 'name', width: 30 },
+      { header: 'Article Code', key: 'articleCode', width: 18 },
+      { header: 'Supplier', key: 'supplier', width: 25 },
+      { header: 'Type', key: 'type', width: 18 },
+      { header: 'Units/Box', key: 'unitsPerBox', width: 12 },
+      { header: 'Boxes/Pallet', key: 'boxesPerPallet', width: 14 },
+      { header: 'Price/Unit', key: 'pricePerUnit', width: 12 },
+      { header: 'Remarks', key: 'remarks', width: 30 },
+      { header: 'Custom', key: 'isCustom', width: 10 },
+      { header: 'Preferred Unit', key: 'preferredOrderUnit', width: 16 },
+      { header: 'Status', key: 'status', width: 10 },
+    ]
+
+    // Style header
+    sheet.getRow(1).font = { bold: true }
+
+    for (const p of sortedProducts) {
+      sheet.addRow({
+        name: p.name,
+        articleCode: p.articleCode,
+        supplier: p.supplier.name,
+        type: p.productType?.name ?? '',
+        unitsPerBox: p.unitsPerBox,
+        boxesPerPallet: p.boxesPerPallet,
+        pricePerUnit: p.pricePerUnit,
+        remarks: p.remarks ?? '',
+        isCustom: p.isCustom ? 'Yes' : 'No',
+        preferredOrderUnit: p.preferredOrderUnit ?? '',
+        status: p.isActive ? 'Active' : 'Inactive',
+      })
+    }
+
+    const buffer = await workbook.xlsx.writeBuffer()
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `products-${new Date().toISOString().slice(0, 10)}.xlsx`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  // -- Excel Import ----------------------------------------------------------
+
+  async function handleImportFile(file: File) {
+    setImporting(true)
+    try {
+      const ExcelJS = (await import('exceljs')).default
+      const workbook = new ExcelJS.Workbook()
+      const arrayBuffer = await file.arrayBuffer()
+      await workbook.xlsx.load(arrayBuffer)
+
+      const sheet = workbook.worksheets[0]
+      if (!sheet) throw new Error('No worksheet found')
+
+      const rows: Record<string, unknown>[] = []
+      const headers: string[] = []
+
+      sheet.eachRow((row, rowNumber) => {
+        if (rowNumber === 1) {
+          row.eachCell((cell) => {
+            headers.push(String(cell.value || '').trim().toLowerCase())
+          })
+          return
+        }
+
+        const rowData: Record<string, unknown> = {}
+        row.eachCell((cell, colNumber) => {
+          const header = headers[colNumber - 1]
+          if (header) rowData[header] = cell.value
+        })
+        rows.push(rowData)
+      })
+
+      if (rows.length === 0) {
+        toast.error('No data rows found in the file')
+        return
+      }
+
+      const res = await fetch('/api/admin/products/import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rows }),
+      })
+
+      const body = await res.json()
+
+      if (!res.ok) {
+        throw new Error(body?.error ?? 'Import failed')
+      }
+
+      if (body.errors?.length > 0) {
+        const errorMessages = body.errors.slice(0, 5).map((e: { row: number; message: string }) => `Row ${e.row}: ${e.message}`).join('\n')
+        toast.warning(`Imported ${body.imported} products. ${body.errors.length} errors:\n${errorMessages}`, { duration: 10000 })
+      } else {
+        toast.success(`Successfully imported ${body.imported} products`)
+      }
+
+      fetchProducts()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Import failed')
+    } finally {
+      setImporting(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
+
+  async function handleDownloadTemplate() {
+    const ExcelJS = (await import('exceljs')).default
+    const workbook = new ExcelJS.Workbook()
+    const sheet = workbook.addWorksheet('Products')
+
+    sheet.columns = [
+      { header: 'Name', key: 'name', width: 30 },
+      { header: 'Article Code', key: 'articleCode', width: 18 },
+      { header: 'Supplier', key: 'supplier', width: 25 },
+      { header: 'Type', key: 'type', width: 18 },
+      { header: 'Units/Box', key: 'unitsPerBox', width: 12 },
+      { header: 'Boxes/Pallet', key: 'boxesPerPallet', width: 14 },
+      { header: 'Price/Unit', key: 'pricePerUnit', width: 12 },
+      { header: 'Remarks', key: 'remarks', width: 30 },
+      { header: 'Custom', key: 'isCustom', width: 10 },
+      { header: 'Preferred Unit', key: 'preferredOrderUnit', width: 16 },
+    ]
+
+    sheet.getRow(1).font = { bold: true }
+
+    // Add data validation for supplier names
+    const supplierNames = suppliers.map((s) => `"${s.name}"`).join(',')
+    const typeNames = productTypes.filter((pt) => pt.isActive).map((pt) => `"${pt.name}"`).join(',')
+
+    for (let i = 2; i <= 100; i++) {
+      if (supplierNames) {
+        sheet.getCell(`C${i}`).dataValidation = {
+          type: 'list',
+          formulae: [supplierNames],
+          showErrorMessage: true,
+          errorTitle: 'Invalid Supplier',
+          error: 'Please select a valid supplier',
+        }
+      }
+      if (typeNames) {
+        sheet.getCell(`D${i}`).dataValidation = {
+          type: 'list',
+          formulae: [typeNames],
+          showErrorMessage: true,
+          errorTitle: 'Invalid Type',
+          error: 'Please select a valid product type',
+        }
+      }
+      sheet.getCell(`I${i}`).dataValidation = {
+        type: 'list',
+        formulae: ['"Yes,No"'],
+      }
+      sheet.getCell(`J${i}`).dataValidation = {
+        type: 'list',
+        formulae: ['"BOX,PALLET"'],
+      }
+    }
+
+    const buffer = await workbook.xlsx.writeBuffer()
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'products-template.xlsx'
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
   // -- Formatting -----------------------------------------------------------
 
   function formatPrice(value: number | null): string {
@@ -352,10 +654,39 @@ export default function ProductsPage() {
         <h1 className="text-2xl font-bold tracking-tight">
           {t('admin.products.title')}
         </h1>
-        <Button onClick={openCreate}>
-          <Plus className="mr-2 h-4 w-4" />
-          {t('admin.products.addProduct')}
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={handleDownloadTemplate}>
+            <Download className="mr-2 h-4 w-4" />
+            {t('admin.products.downloadTemplate')}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={importing}
+          >
+            <Upload className="mr-2 h-4 w-4" />
+            {importing ? t('admin.products.importing') : t('admin.products.import')}
+          </Button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".xlsx,.xls"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0]
+              if (file) handleImportFile(file)
+            }}
+          />
+          <Button variant="outline" size="sm" onClick={handleExport}>
+            <Download className="mr-2 h-4 w-4" />
+            {t('admin.products.export')}
+          </Button>
+          <Button onClick={openCreate}>
+            <Plus className="mr-2 h-4 w-4" />
+            {t('admin.products.addProduct')}
+          </Button>
+        </div>
       </div>
 
       {/* -- Product Types -------------------------------------------------- */}
@@ -474,80 +805,144 @@ export default function ProductsPage() {
         </CardContent>
       </Card>
 
+      {/* -- Filters -------------------------------------------------------- */}
+
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
+        <div className="w-full sm:w-48">
+          <Label className="mb-1.5">{t('common.supplier')}</Label>
+          <Select
+            value={filterSupplier || 'all'}
+            onValueChange={(v) => setFilterSupplier(v === 'all' ? '' : v)}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder={t('common.allSuppliers')} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t('common.allSuppliers')}</SelectItem>
+              {suppliers.map((s) => (
+                <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="w-full sm:w-48">
+          <Label className="mb-1.5">{t('common.productType')}</Label>
+          <Select
+            value={filterType || 'all'}
+            onValueChange={(v) => setFilterType(v === 'all' ? '' : v)}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder={t('common.allTypes')} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t('common.allTypes')}</SelectItem>
+              {activeProductTypes.map((pt) => (
+                <SelectItem key={pt.id} value={pt.id}>{pt.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="relative w-full sm:w-64">
+          <Label className="mb-1.5">{t('common.search')}</Label>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <Input
+              placeholder={t('products.searchPlaceholder')}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+        </div>
+      </div>
+
       {/* -- Products Table ------------------------------------------------- */}
 
       <Card>
         <CardHeader>
-          <CardTitle>{t('admin.products.subtitle')}</CardTitle>
+          <CardTitle>{t('admin.products.subtitle')} ({sortedProducts.length})</CardTitle>
         </CardHeader>
         <CardContent>
           {loading ? (
             <p className="py-8 text-center text-muted-foreground">
               {t('common.loading')}
             </p>
-          ) : products.length === 0 ? (
+          ) : sortedProducts.length === 0 ? (
             <p className="py-8 text-center text-muted-foreground">
               {t('admin.products.noProducts')}
             </p>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{t('admin.products.name')}</TableHead>
-                  <TableHead>{t('admin.products.articleCode')}</TableHead>
-                  <TableHead>{t('admin.products.supplier')}</TableHead>
-                  <TableHead>{t('admin.products.type')}</TableHead>
-                  <TableHead className="text-right">{t('admin.products.unitsPerBox')}</TableHead>
-                  <TableHead className="text-right">{t('admin.products.unitsPerPallet')}</TableHead>
-                  <TableHead className="text-right">{t('admin.products.pricePerUnit')}</TableHead>
-                  <TableHead>{t('admin.products.status')}</TableHead>
-                  <TableHead className="w-[80px]">{t('admin.products.actions')}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {products.map((product) => (
-                  <TableRow key={product.id}>
-                    <TableCell className="font-medium">
-                      {product.name}
-                    </TableCell>
-                    <TableCell>
-                      {displayValue(product.articleCode)}
-                    </TableCell>
-                    <TableCell>{product.supplier.name}</TableCell>
-                    <TableCell>
-                      {product.productType?.name ?? '-'}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {displayValue(product.unitsPerBox)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {displayValue(product.unitsPerPallet)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {formatPrice(product.pricePerUnit)}
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={
-                          product.isActive ? 'default' : 'destructive'
-                        }
-                      >
-                        {product.isActive ? t('admin.products.active') : t('admin.products.inactive')}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => openEdit(product)}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="cursor-pointer select-none" onClick={() => handleSort('name')}>
+                      {t('admin.products.name')}{renderSortIcon('name')}
+                    </TableHead>
+                    <TableHead className="cursor-pointer select-none" onClick={() => handleSort('articleCode')}>
+                      {t('admin.products.articleCode')}{renderSortIcon('articleCode')}
+                    </TableHead>
+                    <TableHead className="cursor-pointer select-none" onClick={() => handleSort('supplier')}>
+                      {t('admin.products.supplier')}{renderSortIcon('supplier')}
+                    </TableHead>
+                    <TableHead className="cursor-pointer select-none" onClick={() => handleSort('type')}>
+                      {t('admin.products.type')}{renderSortIcon('type')}
+                    </TableHead>
+                    <TableHead className="cursor-pointer select-none text-right" onClick={() => handleSort('unitsPerBox')}>
+                      {t('admin.products.unitsPerBox')}{renderSortIcon('unitsPerBox')}
+                    </TableHead>
+                    <TableHead className="cursor-pointer select-none text-right" onClick={() => handleSort('boxesPerPallet')}>
+                      {t('admin.products.boxesPerPallet')}{renderSortIcon('boxesPerPallet')}
+                    </TableHead>
+                    <TableHead className="cursor-pointer select-none text-right" onClick={() => handleSort('pricePerUnit')}>
+                      {t('admin.products.pricePerUnit')}{renderSortIcon('pricePerUnit')}
+                    </TableHead>
+                    <TableHead>{t('admin.products.status')}</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {sortedProducts.map((product) => (
+                    <TableRow
+                      key={product.id}
+                      className="cursor-pointer hover:bg-muted/50"
+                      onClick={() => openEdit(product)}
+                    >
+                      <TableCell className="font-medium">
+                        {product.name}
+                        {product.isCustom && (
+                          <Badge variant="outline" className="ml-2 text-xs">Custom</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="font-mono text-xs">
+                        {displayValue(product.articleCode)}
+                      </TableCell>
+                      <TableCell>{product.supplier.name}</TableCell>
+                      <TableCell>
+                        {product.productType?.name ?? '-'}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {displayValue(product.unitsPerBox)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {displayValue(product.boxesPerPallet)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {formatPrice(product.pricePerUnit)}
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={
+                            product.isActive ? 'default' : 'destructive'
+                          }
+                        >
+                          {product.isActive ? t('admin.products.active') : t('admin.products.inactive')}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
       </Card>
@@ -555,7 +950,7 @@ export default function ProductsPage() {
       {/* -- Dialog --------------------------------------------------------- */}
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-[520px]">
+        <DialogContent className="sm:max-w-[520px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {editingId ? t('admin.products.editTitle') : t('admin.products.addTitle')}
@@ -638,7 +1033,7 @@ export default function ProductsPage() {
               </Select>
             </div>
 
-            {/* Units per Box & Units per Pallet */}
+            {/* Units per Box & Boxes per Pallet */}
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <Label htmlFor="unitsPerBox">{t('admin.products.unitsPerBoxLabel')}</Label>
@@ -656,38 +1051,82 @@ export default function ProductsPage() {
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="unitsPerPallet">{t('admin.products.unitsPerPalletLabel')}</Label>
+                <Label htmlFor="boxesPerPallet">{t('admin.products.boxesPerPalletLabel')}</Label>
                 <Input
-                  id="unitsPerPallet"
+                  id="boxesPerPallet"
                   type="number"
                   min="0"
-                  value={form.unitsPerPallet}
+                  value={form.boxesPerPallet}
                   onChange={(e) =>
                     setForm((prev) => ({
                       ...prev,
-                      unitsPerPallet: e.target.value,
+                      boxesPerPallet: e.target.value,
                     }))
                   }
                 />
               </div>
             </div>
 
-            {/* Price per Unit */}
-            <div className="grid gap-2">
-              <Label htmlFor="pricePerUnit">{t('admin.products.pricePerUnitLabel')}</Label>
-              <Input
-                id="pricePerUnit"
-                type="number"
-                min="0"
-                step="0.01"
-                value={form.pricePerUnit}
-                onChange={(e) =>
-                  setForm((prev) => ({
-                    ...prev,
-                    pricePerUnit: e.target.value,
-                  }))
-                }
-              />
+            {/* Calculated prices */}
+            {form.pricePerUnit && (
+              <div className="rounded-md border bg-muted/30 p-3 text-sm text-muted-foreground space-y-1">
+                {form.unitsPerBox && (
+                  <div className="flex justify-between">
+                    <span>{t('admin.products.pricePerBox')}</span>
+                    <span className="font-medium">{(Number(form.pricePerUnit) * Number(form.unitsPerBox)).toFixed(2)}</span>
+                  </div>
+                )}
+                {form.unitsPerBox && form.boxesPerPallet && (
+                  <div className="flex justify-between">
+                    <span>{t('admin.products.pricePerPallet')}</span>
+                    <span className="font-medium">{(Number(form.pricePerUnit) * Number(form.unitsPerBox) * Number(form.boxesPerPallet)).toFixed(2)}</span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Price per Unit & Preferred Order Unit */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="pricePerUnit">{t('admin.products.pricePerUnitLabel')}</Label>
+                <Input
+                  id="pricePerUnit"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={form.pricePerUnit}
+                  onChange={(e) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      pricePerUnit: e.target.value,
+                    }))
+                  }
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="preferredOrderUnit">{t('admin.products.preferredOrderUnitLabel')}</Label>
+                <Select
+                  value={form.preferredOrderUnit || 'none'}
+                  onValueChange={(value: string) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      preferredOrderUnit: value === 'none' ? '' : value,
+                    }))
+                  }
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder={t('admin.products.preferredOrderUnitPlaceholder')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">{t('admin.products.none')}</SelectItem>
+                    {(Object.values(PreferredOrderUnit) as PreferredOrderUnitType[]).map((unit) => (
+                      <SelectItem key={unit} value={unit}>
+                        {t(`labels.units.${unit}`)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             {/* CSRD Requirements */}
@@ -702,8 +1141,39 @@ export default function ProductsPage() {
                     csrdRequirements: e.target.value,
                   }))
                 }
-                rows={3}
+                rows={2}
               />
+            </div>
+
+            {/* Remarks */}
+            <div className="grid gap-2">
+              <Label htmlFor="remarks">{t('admin.products.remarksLabel')}</Label>
+              <Textarea
+                id="remarks"
+                value={form.remarks}
+                onChange={(e) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    remarks: e.target.value,
+                  }))
+                }
+                rows={2}
+              />
+            </div>
+
+            {/* Custom product checkbox */}
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="isCustom"
+                checked={form.isCustom}
+                onCheckedChange={(checked) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    isCustom: checked === true,
+                  }))
+                }
+              />
+              <Label htmlFor="isCustom">{t('admin.products.isCustomLabel')}</Label>
             </div>
 
             {/* Active toggle (edit only) */}

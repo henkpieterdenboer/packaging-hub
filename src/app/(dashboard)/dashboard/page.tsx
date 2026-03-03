@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useTranslation } from '@/i18n/use-translation'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { ShoppingCart, Clock, Package, Truck, Mail, ExternalLink } from 'lucide-react'
+import { ShoppingCart, Clock, Package, Truck, Mail, ExternalLink, PackageCheck } from 'lucide-react'
 
 const IS_TEST_MODE = process.env.NEXT_PUBLIC_TEST_MODE === 'true'
 
@@ -74,6 +74,7 @@ export default function DashboardPage() {
   }
 
   const isAdmin = session.user.roles.includes('ADMIN')
+  const hasQuickAccess = session.user.roles.includes('ADMIN') || session.user.roles.includes('LOGISTICS')
 
   const statCards = [
     {
@@ -116,6 +117,45 @@ export default function DashboardPage() {
           {t('dashboard.subtitle')}
         </p>
       </div>
+
+      {hasQuickAccess && (
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
+          <Link href="/products" className="block">
+            <Card className="border-primary/20 bg-primary/5 hover:bg-primary/10 hover:shadow-md transition-all">
+              <CardContent className="flex items-center gap-4 p-6">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+                  <ShoppingCart className="h-7 w-7" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    {t('nav.newOrder')}
+                  </h3>
+                  <p className="text-sm text-gray-500">
+                    {t('dashboard.newOrderDesc')}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
+          <Link href="/receiving" className="block">
+            <Card className="border-primary/20 bg-primary/5 hover:bg-primary/10 hover:shadow-md transition-all">
+              <CardContent className="flex items-center gap-4 p-6">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+                  <PackageCheck className="h-7 w-7" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    {t('nav.goodsReceipt')}
+                  </h3>
+                  <p className="text-sm text-gray-500">
+                    {t('dashboard.goodsReceiptDesc')}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
+        </div>
+      )}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {statCards.map((stat) => {

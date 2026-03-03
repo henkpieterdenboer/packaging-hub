@@ -27,6 +27,8 @@ interface OrderDetail {
   status: string
   notes: string | null
   emailSentAt: string | null
+  invoiceNumber: string | null
+  invoiceReceivedAt: string | null
   items: {
     id: string
     quantity: number
@@ -187,6 +189,21 @@ export default function OrderDetailPage() {
                 {order.employee.firstName} {order.employee.lastName}
               </p>
             </div>
+            <div>
+              <span className="text-sm text-gray-500">{t('orderDetail.daysOpen')}</span>
+              {(() => {
+                const daysOpen = Math.floor(
+                  (Date.now() - new Date(order.orderDate).getTime()) / (1000 * 60 * 60 * 24),
+                )
+                const isOverdue =
+                  daysOpen > 7 && order.status !== 'RECEIVED' && order.status !== 'CANCELLED'
+                return (
+                  <p className={`font-medium ${isOverdue ? 'text-red-600 font-bold' : 'text-gray-900'}`}>
+                    {daysOpen} {t('orderDetail.days')}
+                  </p>
+                )
+              })()}
+            </div>
             {order.emailSentAt && (
               <div>
                 <span className="text-sm text-gray-500">{t('orderDetail.emailSent')}</span>
@@ -201,6 +218,24 @@ export default function OrderDetailPage() {
                 </p>
               </div>
             )}
+            <div>
+              <span className="text-sm text-gray-500">{t('orderDetail.invoice')}</span>
+              {order.invoiceNumber ? (
+                <p className="font-medium text-green-700">
+                  {order.invoiceNumber}
+                  {order.invoiceReceivedAt && (
+                    <span className="ml-2 text-xs text-gray-500 font-normal">
+                      ({new Date(order.invoiceReceivedAt).toLocaleDateString(
+                        localeMap[language] || 'en-US',
+                        { year: 'numeric', month: 'short', day: 'numeric' },
+                      )})
+                    </span>
+                  )}
+                </p>
+              ) : (
+                <p className="text-gray-400">{t('orderDetail.noInvoice')}</p>
+              )}
+            </div>
           </div>
 
           {order.notes && (

@@ -40,9 +40,9 @@ export async function PATCH(
       )
     }
 
-    // Non-admin users can only receive their own orders
-    const isAdmin = session.user.roles.includes('ADMIN')
-    if (!isAdmin && order.employeeId !== session.user.id) {
+    // Only ADMIN and LOGISTICS can receive goods
+    const canReceive = session.user.roles.includes('ADMIN') || session.user.roles.includes('LOGISTICS')
+    if (!canReceive) {
       return NextResponse.json(
         { error: 'Insufficient permissions' },
         { status: 403 },

@@ -74,9 +74,12 @@ export async function POST(request: Request) {
       supplierId,
       productTypeId,
       unitsPerBox,
-      unitsPerPallet,
+      boxesPerPallet,
       pricePerUnit,
       csrdRequirements,
+      remarks,
+      isCustom,
+      preferredOrderUnit,
     } = parsed.data
 
     const existingProduct = await prisma.product.findUnique({
@@ -108,9 +111,12 @@ export async function POST(request: Request) {
         supplierId,
         productTypeId: productTypeId ?? null,
         unitsPerBox: unitsPerBox ?? null,
-        unitsPerPallet: unitsPerPallet ?? null,
+        boxesPerPallet: boxesPerPallet ?? null,
         pricePerUnit: pricePerUnit ?? null,
         csrdRequirements: csrdRequirements ?? null,
+        remarks: remarks ?? null,
+        isCustom: isCustom ?? false,
+        preferredOrderUnit: preferredOrderUnit ?? null,
       },
       include: {
         supplier: { select: { id: true, name: true } },
