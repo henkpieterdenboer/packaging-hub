@@ -36,6 +36,8 @@ interface OrderItem {
     name: string
     articleCode: string
     pricePerUnit: number | null
+    unitsPerBox: number | null
+    boxesPerPallet: number | null
   }
 }
 
@@ -111,12 +113,22 @@ export default function InvoicesPage() {
     return result
   }, [orders, filter, supplierFilter])
 
+  function calcLineTotal(item: OrderItem): number {
+    const qty = item.quantityReceived ?? item.quantity
+    const price = item.product.pricePerUnit
+    if (price === null) return 0
+    switch (item.unit) {
+      case 'BOX':
+        return qty * (item.product.unitsPerBox ?? 1) * price
+      case 'PALLET':
+        return qty * (item.product.boxesPerPallet ?? 1) * (item.product.unitsPerBox ?? 1) * price
+      default:
+        return qty * price
+    }
+  }
+
   function calculateTotal(items: OrderItem[]): number {
-    return items.reduce((sum, item) => {
-      const qty = item.quantityReceived ?? item.quantity
-      const price = item.product.pricePerUnit ?? 0
-      return sum + qty * price
-    }, 0)
+    return items.reduce((sum, item) => sum + calcLineTotal(item), 0)
   }
 
   function getReceivedSummary(items: OrderItem[]): string {
@@ -401,9 +413,7 @@ export default function InvoicesPage() {
                         <TableCell colSpan={7} className="bg-gray-50/50 px-6 py-2">
                           <div className="space-y-1">
                             {order.items.map((item) => {
-                              const lineTotal =
-                                (item.quantityReceived ?? item.quantity) *
-                                (item.product.pricePerUnit ?? 0)
+                              const lineTotal = calcLineTotal(item)
                               return (
                                 <div
                                   key={item.id}

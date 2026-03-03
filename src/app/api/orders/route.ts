@@ -61,7 +61,7 @@ export async function GET(request: Request) {
               items: {
                 include: {
                   product: {
-                    select: { name: true, articleCode: true, pricePerUnit: true },
+                    select: { name: true, articleCode: true, pricePerUnit: true, unitsPerBox: true, boxesPerPallet: true },
                   },
                 },
               },

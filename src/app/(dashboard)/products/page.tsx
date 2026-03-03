@@ -282,7 +282,7 @@ export default function NewOrderPage() {
         {totalItems > 0 && (
           <div ref={cartRef} className="relative">
             <Button
-              variant={cartOpen ? 'default' : 'outline'}
+              variant={cartOpen ? 'outline' : 'default'}
               onClick={() => setCartOpen((prev) => !prev)}
             >
               <ShoppingCart className="h-4 w-4" />
@@ -558,7 +558,7 @@ export default function NewOrderPage() {
                     </TableCell>
                     <TableCell>
                       <Button
-                        variant="outline"
+                        variant="secondary"
                         size="sm"
                         onClick={() => handleAddToCart(product)}
                         className="h-8"
