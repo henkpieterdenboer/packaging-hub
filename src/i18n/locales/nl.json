@@ -278,7 +278,8 @@
     "articleCode": "Artikelcode",
     "price": "Prijs",
     "action": "Actie",
-    "goToCart": "Naar Winkelwagen"
+    "goToCart": "Naar Winkelwagen",
+    "cart": "Winkelwagen"
   },
   "cart": {
     "title": "Winkelwagen",

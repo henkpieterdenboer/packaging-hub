@@ -278,7 +278,8 @@
     "articleCode": "Article Code",
     "price": "Price",
     "action": "Action",
-    "goToCart": "Go to Cart"
+    "goToCart": "Go to Cart",
+    "cart": "Cart"
   },
   "cart": {
     "title": "Shopping Cart",

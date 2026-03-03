@@ -278,7 +278,8 @@
     "articleCode": "Kod Artykułu",
     "price": "Cena",
     "action": "Akcja",
-    "goToCart": "Przejdź do Koszyka"
+    "goToCart": "Przejdź do Koszyka",
+    "cart": "Koszyk"
   },
   "cart": {
     "title": "Koszyk",
