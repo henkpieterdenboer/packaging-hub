@@ -7,12 +7,13 @@ export async function generateOrderNumber(tx: TransactionClient): Promise<string
     select: { orderNumber: true },
   })
 
-  if (orders.length === 0) return 'BEST-0001'
+  if (orders.length === 0) return 'PO-0001'
 
   const maxNum = orders.reduce((max, o) => {
-    const num = parseInt(o.orderNumber.split('-')[1], 10)
+    const match = o.orderNumber.match(/-(\d+)$/)
+    const num = match ? parseInt(match[1], 10) : 0
     return num > max ? num : max
   }, 0)
 
-  return `BEST-${String(maxNum + 1).padStart(4, '0')}`
+  return `PO-${String(maxNum + 1).padStart(4, '0')}`
 }

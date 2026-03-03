@@ -55,7 +55,7 @@ Note: `@prisma/adapter-neon` is installed but **not used**. The simple `datasour
 - **Supplier** — suppliers with `ccEmails` string array and `language`
 - **Product** — items linked to suppliers and optional ProductType, optional `unitsPerBox`/`unitsPerPallet`/`pricePerUnit`, optional `pdfUrl`
 - **ProductType** — categorization for products (e.g. Boxes, Labels), managed by admins
-- **Order** — purchase orders with auto-generated `BEST-XXX` numbers, status tracking (PENDING → PARTIALLY_RECEIVED → RECEIVED)
+- **Order** — purchase orders with auto-generated `PO-XXXX` numbers, status tracking (PENDING → PARTIALLY_RECEIVED → RECEIVED)
 - **OrderItem** — line items with quantity/unit, receiving tracking (`quantityReceived`, `receivedDate`, `receivedById`)
 - **Return** — returned items with reason and location
 - **AuditLog** — action trail with `userId` (nullable), `action`, `entityType`, `entityId`
@@ -123,7 +123,7 @@ if (!parsed.success) return NextResponse.json({ errors: parsed.error.flatten().f
 1. Employee selects supplier → browses their products
 2. Adds items with quantities and units (PIECE, BOX, PALLET)
 3. Submits order → `prisma.$transaction()` creates order + items atomically
-4. Auto-generates `BEST-XXX` number (`src/lib/order-utils.ts`)
+4. Auto-generates `PO-XXXX` number (`src/lib/order-utils.ts`)
 5. System emails supplier with HTML order table (CC: supplier CC emails + ordering employee)
 6. Email is logged to `EmailLog` table
 7. Quick order: click "Order" on any product card → pre-fills `/orders/new`
