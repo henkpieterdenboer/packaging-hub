@@ -266,7 +266,8 @@
     "name": "Naam",
     "articleCode": "Artikelcode",
     "price": "Prijs",
-    "action": "Actie"
+    "action": "Actie",
+    "goToCart": "Naar Winkelwagen"
   },
   "cart": {
     "title": "Winkelwagen",

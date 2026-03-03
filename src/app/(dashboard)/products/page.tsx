@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { useCart } from '@/lib/cart-context'
 import { useTranslation } from '@/i18n/use-translation'
 import { localeMap } from '@/i18n'
@@ -61,7 +62,7 @@ export default function NewOrderPage() {
   const { status } = useSession()
   const router = useRouter()
   const { t, language } = useTranslation()
-  const { addItem } = useCart()
+  const { addItem, totalItems } = useCart()
 
   const [products, setProducts] = useState<Product[]>([])
   const [suppliers, setSuppliers] = useState<Supplier[]>([])
@@ -249,11 +250,21 @@ export default function NewOrderPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight text-gray-900">
-          {t('products.title')}
-        </h2>
-        <p className="mt-1 text-sm text-gray-500">{t('products.subtitle')}</p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight text-gray-900">
+            {t('products.title')}
+          </h2>
+          <p className="mt-1 text-sm text-gray-500">{t('products.subtitle')}</p>
+        </div>
+        {totalItems > 0 && (
+          <Button asChild>
+            <Link href="/cart">
+              <ShoppingCart className="h-4 w-4" />
+              {t('products.goToCart')} ({totalItems})
+            </Link>
+          </Button>
+        )}
       </div>
 
       {/* Filters */}

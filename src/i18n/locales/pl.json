@@ -266,7 +266,8 @@
     "name": "Nazwa",
     "articleCode": "Kod Artykułu",
     "price": "Cena",
-    "action": "Akcja"
+    "action": "Akcja",
+    "goToCart": "Przejdź do Koszyka"
   },
   "cart": {
     "title": "Koszyk",

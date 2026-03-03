@@ -266,7 +266,8 @@
     "name": "Name",
     "articleCode": "Article Code",
     "price": "Price",
-    "action": "Action"
+    "action": "Action",
+    "goToCart": "Go to Cart"
   },
   "cart": {
     "title": "Shopping Cart",
