@@ -25,7 +25,7 @@ export async function POST(request: Request) {
 
     if (user && user.isActive) {
       const token = uuidv4()
-      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
+      const expiresAt = new Date(Date.now() + 60 * 60 * 1000) // 1 hour
 
       await prisma.user.update({
         where: { id: user.id },
@@ -40,9 +40,11 @@ export async function POST(request: Request) {
     }
 
     // Always return success to prevent email enumeration
+    // Only include etherealUrl in test mode to avoid leaking user existence
+    const isTestMode = process.env.NEXT_PUBLIC_TEST_MODE === 'true'
     return NextResponse.json({
       message: 'If an account with that email exists, a password reset link has been sent.',
-      etherealUrl,
+      ...(isTestMode && etherealUrl ? { etherealUrl } : {}),
     })
   } catch (error) {
     console.error('[ForgotPassword] Error:', error)

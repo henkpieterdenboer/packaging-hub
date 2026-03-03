@@ -4,6 +4,10 @@ import { authOptions } from '@/lib/auth'
 
 export async function GET() {
   try {
+    if (process.env.NEXT_PUBLIC_TEST_MODE !== 'true') {
+      return NextResponse.json({ error: 'Not available' }, { status: 404 })
+    }
+
     const session = await getServerSession(authOptions)
 
     if (!session?.user) {

@@ -138,9 +138,9 @@ function addDemoBanner(html: string, originalTo: string, provider: EmailProvider
   const banner = `
     <div style="background-color: #fee2e2; border: 1px solid #fca5a5; border-radius: 6px; padding: 12px; margin-bottom: 16px; font-size: 13px; color: #991b1b;">
       <strong>TEST MODE</strong><br/>
-      Original recipient: ${originalTo}<br/>
+      Original recipient: ${escapeHtml(originalTo)}<br/>
       Provider: ${providerLabel}<br/>
-      Actual recipient: ${actualTo}
+      Actual recipient: ${escapeHtml(actualTo)}
     </div>
   `
   return banner + html

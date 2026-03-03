@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useReducer, useEffect, useCallback, type ReactNode } from 'react'
+import { createContext, useContext, useReducer, useEffect, useCallback, useMemo, type ReactNode } from 'react'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -152,7 +152,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
     dispatch({ type: 'CLEAR_ALL' })
   }, [])
 
-  const totalItems = state.items.reduce((sum, item) => sum + item.quantity, 0)
+  const totalItems = useMemo(
+    () => state.items.reduce((sum, item) => sum + item.quantity, 0),
+    [state.items],
+  )
 
   return (
     <CartContext.Provider

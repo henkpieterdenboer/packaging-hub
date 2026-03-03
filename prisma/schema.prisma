@@ -1,6 +1,6 @@
 generator client {
   provider        = "prisma-client-js"
-  previewFeatures = ["driverAdapters"]
+  // previewFeatures removed — driverAdapters not in use
 }
 
 datasource db {
@@ -79,6 +79,7 @@ model Product {
   orderItems       OrderItem[]
 
   @@index([supplierId])
+  @@index([productTypeId])
 }
 
 model Order {

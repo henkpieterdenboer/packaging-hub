@@ -70,6 +70,11 @@ export default function InvoicesPage() {
   const [saving, setSaving] = useState<string | null>(null)
   const [expandedId, setExpandedId] = useState<string | null>(null)
 
+  const eurFormatter = useMemo(
+    () => new Intl.NumberFormat(localeMap[language] || 'en-US', { style: 'currency', currency: 'EUR' }),
+    [language],
+  )
+
   useEffect(() => {
     if (status === 'unauthenticated') router.push('/login')
   }, [status, router])
@@ -323,10 +328,7 @@ export default function InvoicesPage() {
                       </TableCell>
                       <TableCell className="hidden md:table-cell text-right font-mono">
                         {total > 0
-                          ? new Intl.NumberFormat(localeMap[language] || 'en-US', {
-                              style: 'currency',
-                              currency: 'EUR',
-                            }).format(total)
+                          ? eurFormatter.format(total)
                           : '-'}
                       </TableCell>
                       <TableCell onClick={(e) => e.stopPropagation()}>
@@ -434,10 +436,7 @@ export default function InvoicesPage() {
                                   </span>
                                   {lineTotal > 0 && (
                                     <span className="font-mono text-gray-600">
-                                      {new Intl.NumberFormat(
-                                        localeMap[language] || 'en-US',
-                                        { style: 'currency', currency: 'EUR' },
-                                      ).format(lineTotal)}
+                                      {eurFormatter.format(lineTotal)}
                                     </span>
                                   )}
                                 </div>

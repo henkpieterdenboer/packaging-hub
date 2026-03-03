@@ -26,17 +26,11 @@ export async function POST(request: Request) {
 
     const { password } = parsed.data
 
-    const user = await prisma.user.findFirst({
-      where: {
-        activationToken: token,
-        isActive: false,
-        activationExpiresAt: {
-          gt: new Date(),
-        },
-      },
+    const user = await prisma.user.findUnique({
+      where: { activationToken: token },
     })
 
-    if (!user) {
+    if (!user || user.isActive || !user.activationExpiresAt || user.activationExpiresAt <= new Date()) {
       return NextResponse.json(
         { error: 'Invalid or expired activation token.' },
         { status: 400 },

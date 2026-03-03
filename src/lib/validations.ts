@@ -98,8 +98,8 @@ export const createProductSchema = z.object({
   unitsPerBox: z.number().int().positive().nullable().optional(),
   boxesPerPallet: z.number().int().positive().nullable().optional(),
   pricePerUnit: z.number().positive().nullable().optional(),
-  csrdRequirements: z.string().nullable().optional(),
-  remarks: z.string().nullable().optional(),
+  csrdRequirements: z.string().max(2000).nullable().optional(),
+  remarks: z.string().max(1000).nullable().optional(),
   isCustom: z.boolean().optional(),
   preferredOrderUnit: z.enum(preferredOrderUnitValues).nullable().optional(),
 })
@@ -114,8 +114,8 @@ export const updateProductSchema = z.object({
   unitsPerBox: z.number().int().positive().nullable().optional(),
   boxesPerPallet: z.number().int().positive().nullable().optional(),
   pricePerUnit: z.number().positive().nullable().optional(),
-  csrdRequirements: z.string().nullable().optional(),
-  remarks: z.string().nullable().optional(),
+  csrdRequirements: z.string().max(2000).nullable().optional(),
+  remarks: z.string().max(1000).nullable().optional(),
   isCustom: z.boolean().optional(),
   preferredOrderUnit: z.enum(preferredOrderUnitValues).nullable().optional(),
   isActive: z.boolean().optional(),
@@ -135,7 +135,7 @@ const orderItemSchema = z.object({
 
 export const createOrderSchema = z.object({
   supplierId: z.string().min(1, 'Supplier is required'),
-  notes: z.string().optional(),
+  notes: z.string().max(1000).optional(),
   items: z
     .array(orderItemSchema)
     .min(1, 'At least one item is required'),
@@ -212,7 +212,7 @@ export const receiveGoodsSchema = z.object({
       }),
     )
     .min(1, 'At least one item is required'),
-  notes: z.string().optional(),
+  notes: z.string().max(1000).optional(),
 })
 
 export type ReceiveGoodsInput = z.infer<typeof receiveGoodsSchema>
@@ -220,7 +220,7 @@ export type ReceiveGoodsInput = z.infer<typeof receiveGoodsSchema>
 // ─── Invoice ────────────────────────────────────────────────────────────────
 
 export const matchInvoiceSchema = z.object({
-  invoiceNumber: z.string().min(1, 'Invoice number is required'),
+  invoiceNumber: z.string().min(1, 'Invoice number is required').max(100),
 })
 
 export type MatchInvoiceInput = z.infer<typeof matchInvoiceSchema>

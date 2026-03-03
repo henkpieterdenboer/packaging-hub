@@ -48,22 +48,25 @@ export async function PATCH(
       )
     }
 
-    const updated = await prisma.order.update({
-      where: { id },
-      data: {
-        invoiceNumber: parsed.data.invoiceNumber,
-        invoiceReceivedAt: new Date(),
-      },
-    })
+    const updated = await prisma.$transaction(async (tx) => {
+      const order2 = await tx.order.update({
+        where: { id },
+        data: {
+          invoiceNumber: parsed.data.invoiceNumber,
+          invoiceReceivedAt: new Date(),
+        },
+      })
 
-    // Audit log
-    await prisma.auditLog.create({
-      data: {
-        userId: session.user.id,
-        action: 'INVOICE_MATCHED',
-        entityType: 'Order',
-        entityId: id,
-      },
+      await tx.auditLog.create({
+        data: {
+          userId: session.user.id,
+          action: 'INVOICE_MATCHED',
+          entityType: 'Order',
+          entityId: id,
+        },
+      })
+
+      return order2
     })
 
     return NextResponse.json(updated)

@@ -65,12 +65,19 @@ export async function PATCH(
 
     const { items, notes } = parsed.data
 
-    // Validate all orderItemIds belong to this order
-    const orderItemIds = order.items.map((i) => i.id)
+    // Validate all orderItemIds belong to this order and quantities don't exceed ordered
+    const orderItemMap = new Map(order.items.map((i) => [i.id, i]))
     for (const item of items) {
-      if (!orderItemIds.includes(item.orderItemId)) {
+      const orderItem = orderItemMap.get(item.orderItemId)
+      if (!orderItem) {
         return NextResponse.json(
           { error: `Item ${item.orderItemId} does not belong to this order` },
+          { status: 400 },
+        )
+      }
+      if (item.quantityReceived > orderItem.quantity) {
+        return NextResponse.json(
+          { error: `Received quantity (${item.quantityReceived}) exceeds ordered quantity (${orderItem.quantity})` },
           { status: 400 },
         )
       }

@@ -78,9 +78,30 @@ export async function POST(
       )
     }
 
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp']
+    if (!allowedTypes.includes(file.type)) {
+      return NextResponse.json(
+        { error: 'Invalid file type. Only JPEG, PNG and WebP are allowed.' },
+        { status: 400 },
+      )
+    }
+
+    // Validate file size (max 10MB)
+    const maxSize = 10 * 1024 * 1024
+    if (file.size > maxSize) {
+      return NextResponse.json(
+        { error: 'File too large. Maximum size is 10MB.' },
+        { status: 400 },
+      )
+    }
+
+    // Sanitize filename
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
+
     // Upload to Vercel Blob
     const blob = await put(
-      `delivery-photos/${id}/${file.name}`,
+      `delivery-photos/${id}/${safeName}`,
       file,
       { access: 'public' },
     )
@@ -90,7 +111,7 @@ export async function POST(
       data: {
         orderId: id,
         blobUrl: blob.url,
-        fileName: file.name,
+        fileName: safeName,
         uploadedById: session.user.id,
       },
     })

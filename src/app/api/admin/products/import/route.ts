@@ -31,6 +31,13 @@ export async function POST(request: Request) {
       )
     }
 
+    if (rows.length > 1000) {
+      return NextResponse.json(
+        { error: 'Too many rows. Maximum is 1000 per import.' },
+        { status: 400 },
+      )
+    }
+
     // Pre-fetch suppliers and product types for matching
     const suppliers = await prisma.supplier.findMany({
       where: { isActive: true },

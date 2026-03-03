@@ -98,6 +98,17 @@ export async function POST(request: Request) {
       )
     }
 
+    // Only ADMIN and LOGISTICS can create orders
+    const canOrder =
+      session.user.roles.includes('ADMIN') ||
+      session.user.roles.includes('LOGISTICS')
+    if (!canOrder) {
+      return NextResponse.json(
+        { error: 'Insufficient permissions' },
+        { status: 403 },
+      )
+    }
+
     const body = await request.json()
     const parsed = createOrderSchema.safeParse(body)
 
