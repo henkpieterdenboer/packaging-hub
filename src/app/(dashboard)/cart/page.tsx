@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useEffect, useMemo } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useCart } from '@/lib/cart-context'
@@ -26,7 +26,7 @@ import {
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
-import { Loader2, ShoppingCart, Trash2, Package } from 'lucide-react'
+import { AlertTriangle, Loader2, ShoppingCart, Trash2, Package } from 'lucide-react'
 import { Unit } from '@/types'
 import Link from 'next/link'
 
@@ -99,6 +99,21 @@ export default function CartPage() {
   const [notes, setNotes] = useState<Record<string, string>>({})
   const [loadingSupplier, setLoadingSupplier] = useState<string | null>(null)
   const [loadingAll, setLoadingAll] = useState(false)
+  const [pendingOrders, setPendingOrders] = useState<
+    Record<string, Array<{ orderNumber: string; employeeName: string }>>
+  >({})
+
+  useEffect(() => {
+    async function fetchPending() {
+      try {
+        const res = await fetch('/api/products/pending-orders')
+        if (res.ok) setPendingOrders(await res.json())
+      } catch (err) {
+        console.error('Failed to fetch pending orders:', err)
+      }
+    }
+    if (status === 'authenticated' && items.length > 0) fetchPending()
+  }, [status, items.length])
 
   // Access control: only ADMIN and LOGISTICS can order
   const canOrder = useMemo(() => {
@@ -357,9 +372,13 @@ export default function CartPage() {
                         item.unitsPerBox,
                         item.boxesPerPallet,
                       )
+                      const pending = pendingOrders[item.productId]
 
                       return (
-                        <TableRow key={item.productId}>
+                        <TableRow
+                          key={item.productId}
+                          className={pending ? 'border-l-4 border-l-amber-400' : ''}
+                        >
                           <TableCell>
                             <div>
                               <span className="font-medium">{item.productName}</span>
@@ -371,6 +390,17 @@ export default function CartPage() {
                                 <span className="block text-xs text-gray-400 mt-0.5">
                                   {t('cart.unitConversion')}: {conversion}
                                 </span>
+                              )}
+                              {pending && (
+                                <div className="mt-1 flex items-start gap-1 text-xs text-amber-700">
+                                  <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" />
+                                  <span>
+                                    {t('cart.pendingWarning')}{' '}
+                                    {pending
+                                      .map((p) => `${p.orderNumber} (${p.employeeName})`)
+                                      .join(', ')}
+                                  </span>
+                                </div>
                               )}
                             </div>
                           </TableCell>

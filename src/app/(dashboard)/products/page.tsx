@@ -32,7 +32,6 @@ import {
   ArrowUp,
   ArrowDown,
   ShoppingCart,
-  AlertTriangle,
 } from 'lucide-react'
 
 interface Supplier {
@@ -58,11 +57,6 @@ interface Product {
   productType: { id: string; name: string } | null
 }
 
-type PendingOrders = Record<
-  string,
-  Array<{ orderNumber: string; employeeName: string }>
->
-
 export default function NewOrderPage() {
   const { status } = useSession()
   const router = useRouter()
@@ -72,7 +66,7 @@ export default function NewOrderPage() {
   const [products, setProducts] = useState<Product[]>([])
   const [suppliers, setSuppliers] = useState<Supplier[]>([])
   const [productTypes, setProductTypes] = useState<ProductType[]>([])
-  const [pendingOrders, setPendingOrders] = useState<PendingOrders>({})
+
   const [selectedSupplierId, setSelectedSupplierId] = useState('')
   const [selectedProductTypeId, setSelectedProductTypeId] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
@@ -92,14 +86,12 @@ export default function NewOrderPage() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const [suppRes, typeRes, pendingRes] = await Promise.all([
+        const [suppRes, typeRes] = await Promise.all([
           fetch('/api/suppliers'),
           fetch('/api/product-types'),
-          fetch('/api/products/pending-orders'),
         ])
         if (suppRes.ok) setSuppliers(await suppRes.json())
         if (typeRes.ok) setProductTypes(await typeRes.json())
-        if (pendingRes.ok) setPendingOrders(await pendingRes.json())
       } catch (err) {
         console.error('Failed to fetch data:', err)
       }
@@ -406,15 +398,11 @@ export default function NewOrderPage() {
             </TableHeader>
             <TableBody>
               {sortedProducts.map((product) => {
-                const pending = pendingOrders[product.id]
                 const qty = getQty(product.id)
                 const unit = getUnit(product)
 
                 return (
-                  <TableRow
-                    key={product.id}
-                    className={pending ? 'border-l-4 border-l-amber-400' : ''}
-                  >
+                  <TableRow key={product.id}>
                     <TableCell>
                       <div>
                         <span className="font-medium">{product.name}</span>
@@ -425,20 +413,6 @@ export default function NewOrderPage() {
                         <span className="block text-xs text-gray-400 md:hidden sm:block">
                           {product.supplier.name}
                         </span>
-                        {pending && (
-                          <div className="mt-1 flex items-start gap-1 text-xs text-amber-700">
-                            <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" />
-                            <span>
-                              {t('cart.pendingWarning')}{' '}
-                              {pending
-                                .map(
-                                  (p) =>
-                                    `${p.orderNumber} (${p.employeeName})`,
-                                )
-                                .join(', ')}
-                            </span>
-                          </div>
-                        )}
                       </div>
                     </TableCell>
                     <TableCell className="hidden sm:table-cell font-mono text-xs text-gray-500">
