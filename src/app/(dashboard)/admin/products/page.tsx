@@ -30,7 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Plus, Pencil, Check, X, ArrowUp, ArrowDown, Download, Upload, Search, AlertTriangle } from 'lucide-react'
+import { Plus, Pencil, Check, X, ArrowUp, ArrowDown, Download, Upload, Search, AlertTriangle, Tags } from 'lucide-react'
 import { toast } from 'sonner'
 import { PreferredOrderUnit, PreferredOrderUnitType } from '@/types'
 import { useTranslation } from '@/i18n/use-translation'
@@ -126,7 +126,8 @@ export default function ProductsPage() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [importing, setImporting] = useState(false)
 
-  // Product type inline editing state
+  // Product type dialog + editing state
+  const [typesDialogOpen, setTypesDialogOpen] = useState(false)
   const [newTypeName, setNewTypeName] = useState('')
   const [addingType, setAddingType] = useState(false)
   const [editingTypeId, setEditingTypeId] = useState<string | null>(null)
@@ -693,6 +694,10 @@ export default function ProductsPage() {
             <Download className="mr-2 h-4 w-4" />
             {t('admin.products.export')}
           </Button>
+          <Button variant="outline" size="sm" onClick={() => setTypesDialogOpen(true)}>
+            <Tags className="mr-2 h-4 w-4" />
+            {t('admin.products.productTypes')}
+          </Button>
           <Button onClick={openCreate}>
             <Plus className="mr-2 h-4 w-4" />
             {t('admin.products.addProduct')}
@@ -700,14 +705,14 @@ export default function ProductsPage() {
         </div>
       </div>
 
-      {/* -- Product Types -------------------------------------------------- */}
+      {/* -- Product Types Dialog ------------------------------------------- */}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('admin.products.productTypes')}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
+      <Dialog open={typesDialogOpen} onOpenChange={setTypesDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t('admin.products.productTypes')}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
             {/* Add new type */}
             <div className="flex items-center gap-2">
               <Input
@@ -717,7 +722,6 @@ export default function ProductsPage() {
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') handleAddType()
                 }}
-                className="max-w-xs"
               />
               <Button
                 size="sm"
@@ -813,8 +817,8 @@ export default function ProductsPage() {
               </div>
             )}
           </div>
-        </CardContent>
-      </Card>
+        </DialogContent>
+      </Dialog>
 
       {/* -- Filters -------------------------------------------------------- */}
 
