@@ -247,7 +247,11 @@
     "deletePhoto": "Usuń",
     "noPhotos": "Nie przesłano jeszcze zdjęć dostawy.",
     "photoDeleted": "Zdjęcie usunięte",
-    "photoUploaded": "Zdjęcie przesłane"
+    "photoUploaded": "Zdjęcie przesłane",
+    "searchPlaceholder": "Szukaj zamówień...",
+    "allEmployees": "Wszyscy Pracownicy",
+    "allSuppliers": "Wszyscy Dostawcy",
+    "noResults": "Brak zamówień pasujących do filtrów."
   },
   "products": {
     "title": "Nowe Zamówienie",

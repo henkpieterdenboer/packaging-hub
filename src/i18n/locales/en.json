@@ -247,7 +247,11 @@
     "deletePhoto": "Delete",
     "noPhotos": "No delivery photos uploaded yet.",
     "photoDeleted": "Photo deleted",
-    "photoUploaded": "Photo uploaded"
+    "photoUploaded": "Photo uploaded",
+    "searchPlaceholder": "Search orders...",
+    "allEmployees": "All Employees",
+    "allSuppliers": "All Suppliers",
+    "noResults": "No orders match your filters."
   },
   "products": {
     "title": "New Order",

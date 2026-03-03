@@ -247,7 +247,11 @@
     "deletePhoto": "Verwijderen",
     "noPhotos": "Nog geen afleveringsfoto's geüpload.",
     "photoDeleted": "Foto verwijderd",
-    "photoUploaded": "Foto geüpload"
+    "photoUploaded": "Foto geüpload",
+    "searchPlaceholder": "Zoek bestellingen...",
+    "allEmployees": "Alle Medewerkers",
+    "allSuppliers": "Alle Leveranciers",
+    "noResults": "Geen bestellingen gevonden voor deze filters."
   },
   "products": {
     "title": "Nieuwe Bestelling",
