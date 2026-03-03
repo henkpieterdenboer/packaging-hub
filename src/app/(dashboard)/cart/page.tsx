@@ -27,7 +27,6 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
 import { AlertTriangle, Loader2, ShoppingCart, Trash2, Package } from 'lucide-react'
-import { Unit } from '@/types'
 import Link from 'next/link'
 
 // ---------------------------------------------------------------------------
@@ -61,6 +60,24 @@ interface SupplierGroup {
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+function calcLineTotal(
+  quantity: number,
+  unit: string,
+  pricePerUnit: number | null,
+  unitsPerBox: number | null,
+  boxesPerPallet: number | null,
+): number | null {
+  if (pricePerUnit === null) return null
+  switch (unit) {
+    case 'BOX':
+      return quantity * (unitsPerBox ?? 1) * pricePerUnit
+    case 'PALLET':
+      return quantity * (boxesPerPallet ?? 1) * (unitsPerBox ?? 1) * pricePerUnit
+    default:
+      return quantity * pricePerUnit
+  }
+}
 
 function buildUnitConversion(
   unitsPerBox: number | null,
@@ -441,18 +458,35 @@ export default function CartPage() {
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
-                                {Object.entries(Unit).map(([key, value]) => (
-                                  <SelectItem key={key} value={value}>
-                                    {t(`labels.units.${value}`)}
+                                <SelectItem value="PIECE">
+                                  {t('labels.units.PIECE')}
+                                </SelectItem>
+                                {item.unitsPerBox && (
+                                  <SelectItem value="BOX">
+                                    {t('labels.units.BOX')}
                                   </SelectItem>
-                                ))}
+                                )}
+                                {item.boxesPerPallet && (
+                                  <SelectItem value="PALLET">
+                                    {t('labels.units.PALLET')}
+                                  </SelectItem>
+                                )}
                               </SelectContent>
                             </Select>
                           </TableCell>
                           <TableCell className="hidden sm:table-cell text-right">
-                            {item.pricePerUnit !== null
-                              ? eurFormatter.format(item.quantity * item.pricePerUnit)
-                              : <span className="text-gray-400">--</span>}
+                            {(() => {
+                              const total = calcLineTotal(
+                                item.quantity,
+                                item.unit,
+                                item.pricePerUnit,
+                                item.unitsPerBox,
+                                item.boxesPerPallet,
+                              )
+                              return total !== null
+                                ? eurFormatter.format(total)
+                                : <span className="text-gray-400">--</span>
+                            })()}
                           </TableCell>
                           <TableCell>
                             <Button

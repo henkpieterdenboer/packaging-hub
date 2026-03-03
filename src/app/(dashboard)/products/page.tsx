@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo, useRef } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -66,6 +66,7 @@ export default function NewOrderPage() {
   const { t, language } = useTranslation()
   const { addItem, items: cartItems, totalItems, removeItem } = useCart()
   const [cartOpen, setCartOpen] = useState(false)
+  const cartRef = useRef<HTMLDivElement>(null)
 
   const [products, setProducts] = useState<Product[]>([])
   const [suppliers, setSuppliers] = useState<Supplier[]>([])
@@ -126,6 +127,18 @@ export default function NewOrderPage() {
     }
     if (status === 'authenticated') fetchProducts()
   }, [status, selectedSupplierId, selectedProductTypeId])
+
+  // Close cart dropdown on click outside
+  useEffect(() => {
+    if (!cartOpen) return
+    function handleClickOutside(e: MouseEvent) {
+      if (cartRef.current && !cartRef.current.contains(e.target as Node)) {
+        setCartOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [cartOpen])
 
   // Derive qty/unit for a product (override or defaults)
   function getQty(productId: string): number {
@@ -267,55 +280,61 @@ export default function NewOrderPage() {
           <p className="mt-1 text-sm text-gray-500">{t('products.subtitle')}</p>
         </div>
         {totalItems > 0 && (
-          <Button
-            variant={cartOpen ? 'default' : 'outline'}
-            onClick={() => setCartOpen((prev) => !prev)}
-          >
-            <ShoppingCart className="h-4 w-4" />
-            {t('products.cart')} ({totalItems})
-            {cartOpen ? (
-              <ChevronUp className="h-4 w-4" />
-            ) : (
-              <ChevronDown className="h-4 w-4" />
+          <div ref={cartRef} className="relative">
+            <Button
+              variant={cartOpen ? 'default' : 'outline'}
+              onClick={() => setCartOpen((prev) => !prev)}
+            >
+              <ShoppingCart className="h-4 w-4" />
+              {t('products.cart')} ({totalItems})
+              {cartOpen ? (
+                <ChevronUp className="h-4 w-4" />
+              ) : (
+                <ChevronDown className="h-4 w-4" />
+              )}
+            </Button>
+
+            {/* Floating mini cart dropdown */}
+            {cartOpen && (
+              <div className="absolute right-0 top-full mt-2 w-80 rounded-lg border bg-white shadow-lg z-50 max-h-96 flex flex-col">
+                <div className="overflow-y-auto p-3 space-y-1.5 flex-1">
+                  {cartItems.map((item) => (
+                    <div
+                      key={item.productId}
+                      className="flex items-center justify-between gap-2 text-sm"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <span className="font-medium text-xs block truncate">
+                          {item.productName}
+                        </span>
+                        <span className="text-gray-500 text-xs">
+                          {item.quantity} {t(`labels.units.${item.unit}`)}
+                        </span>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0 text-gray-400 hover:text-red-500 shrink-0"
+                        onClick={() => removeItem(item.productId)}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+                <div className="p-3 border-t">
+                  <Button asChild size="sm" className="w-full">
+                    <Link href="/cart">
+                      <ShoppingCart className="h-4 w-4" />
+                      {t('products.goToCart')}
+                    </Link>
+                  </Button>
+                </div>
+              </div>
             )}
-          </Button>
+          </div>
         )}
       </div>
-
-      {/* Mini cart */}
-      {cartOpen && totalItems > 0 && (
-        <div className="rounded-lg border bg-white p-4 space-y-2">
-          {cartItems.map((item) => (
-            <div
-              key={item.productId}
-              className="flex items-center justify-between gap-3 text-sm"
-            >
-              <div className="flex items-baseline gap-2 min-w-0">
-                <span className="font-medium truncate">{item.productName}</span>
-                <span className="text-gray-500 shrink-0">
-                  {item.quantity} {t(`labels.units.${item.unit}`)}
-                </span>
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 w-7 p-0 text-gray-400 hover:text-red-500 shrink-0"
-                onClick={() => removeItem(item.productId)}
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-              </Button>
-            </div>
-          ))}
-          <div className="pt-2 border-t">
-            <Button asChild size="sm" className="w-full">
-              <Link href="/cart">
-                <ShoppingCart className="h-4 w-4" />
-                {t('products.goToCart')}
-              </Link>
-            </Button>
-          </div>
-        </div>
-      )}
 
       {/* Filters */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
