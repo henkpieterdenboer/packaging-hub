@@ -361,7 +361,7 @@ export default function CartPage() {
                       <TableHead className="w-28">{t('newOrder.quantity')}</TableHead>
                       <TableHead className="w-36">{t('newOrder.unit')}</TableHead>
                       <TableHead className="hidden sm:table-cell text-right">
-                        {t('products.price')}
+                        {t('cart.total')}
                       </TableHead>
                       <TableHead className="w-12"></TableHead>
                     </TableRow>
@@ -392,15 +392,17 @@ export default function CartPage() {
                                 </span>
                               )}
                               {pending && (
-                                <div className="mt-1 flex items-start gap-1 text-xs text-amber-700">
+                                <Link
+                                  href="/orders?status=PENDING"
+                                  className="mt-1 flex items-start gap-1 text-xs text-amber-700 hover:text-amber-900 max-w-xs truncate"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
                                   <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" />
-                                  <span>
+                                  <span className="truncate">
                                     {t('cart.pendingWarning')}{' '}
-                                    {pending
-                                      .map((p) => `${p.orderNumber} (${p.employeeName})`)
-                                      .join(', ')}
+                                    {pending.map((p) => p.orderNumber).join(', ')}
                                   </span>
-                                </div>
+                                </Link>
                               )}
                             </div>
                           </TableCell>
@@ -449,7 +451,7 @@ export default function CartPage() {
                           </TableCell>
                           <TableCell className="hidden sm:table-cell text-right">
                             {item.pricePerUnit !== null
-                              ? eurFormatter.format(item.pricePerUnit)
+                              ? eurFormatter.format(item.quantity * item.pricePerUnit)
                               : <span className="text-gray-400">--</span>}
                           </TableCell>
                           <TableCell>

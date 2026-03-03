@@ -292,7 +292,8 @@
     "addedToCart": "{{product}} toegevoegd aan winkelwagen",
     "pendingWarning": "Openstaande bestelling(en):",
     "items": "artikel(en)",
-    "suppliers": "leverancier(s)"
+    "suppliers": "leverancier(s)",
+    "total": "Totaal"
   },
   "invoices": {
     "title": "Factuurcontrole",
@@ -513,7 +514,8 @@
     "roles": {
       "ADMIN": "Beheerder",
       "LOGISTICS": "Logistiek",
-      "FINANCE": "Financieel"
+      "FINANCE": "Financieel",
+      "USER": "Gebruiker"
     },
     "orderStatus": {
       "PENDING": "In Afwachting",

@@ -292,7 +292,8 @@
     "addedToCart": "{{product}} dodano do koszyka",
     "pendingWarning": "Otwarte zamówienie(a):",
     "items": "pozycji",
-    "suppliers": "dostawca(ów)"
+    "suppliers": "dostawca(ów)",
+    "total": "Razem"
   },
   "invoices": {
     "title": "Kontrola Faktur",
@@ -513,7 +514,8 @@
     "roles": {
       "ADMIN": "Administrator",
       "LOGISTICS": "Logistyka",
-      "FINANCE": "Finanse"
+      "FINANCE": "Finanse",
+      "USER": "Użytkownik"
     },
     "orderStatus": {
       "PENDING": "Oczekujące",

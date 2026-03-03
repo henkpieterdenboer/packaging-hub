@@ -292,7 +292,8 @@
     "addedToCart": "{{product}} added to cart",
     "pendingWarning": "Open order(s):",
     "items": "item(s)",
-    "suppliers": "supplier(s)"
+    "suppliers": "supplier(s)",
+    "total": "Total"
   },
   "invoices": {
     "title": "Invoice Control",
@@ -513,7 +514,8 @@
     "roles": {
       "ADMIN": "Administrator",
       "LOGISTICS": "Logistics",
-      "FINANCE": "Finance"
+      "FINANCE": "Finance",
+      "USER": "User"
     },
     "orderStatus": {
       "PENDING": "Pending",
