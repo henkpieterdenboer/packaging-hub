@@ -739,14 +739,14 @@ export default function ProductsPage() {
                 {t('admin.products.noTypes')}
               </p>
             ) : (
-              <div className="flex flex-wrap gap-2">
+              <div className="divide-y">
                 {productTypes.map((type) => (
                   <div
                     key={type.id}
-                    className="flex items-center gap-1.5 rounded-md border px-3 py-1.5"
+                    className="flex items-center justify-between py-2"
                   >
                     {editingTypeId === type.id ? (
-                      <>
+                      <div className="flex items-center gap-2 flex-1">
                         <Input
                           value={editingTypeName}
                           onChange={(e) => setEditingTypeName(e.target.value)}
@@ -754,13 +754,13 @@ export default function ProductsPage() {
                             if (e.key === 'Enter') handleUpdateType(type.id)
                             if (e.key === 'Escape') setEditingTypeId(null)
                           }}
-                          className="h-7 w-32"
+                          className="h-8"
                           autoFocus
                         />
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-7 w-7"
+                          className="h-8 w-8 shrink-0"
                           onClick={() => handleUpdateType(type.id)}
                         >
                           <Check className="h-3.5 w-3.5" />
@@ -768,12 +768,12 @@ export default function ProductsPage() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-7 w-7"
+                          className="h-8 w-8 shrink-0"
                           onClick={() => setEditingTypeId(null)}
                         >
                           <X className="h-3.5 w-3.5" />
                         </Button>
-                      </>
+                      </div>
                     ) : (
                       <>
                         <span
@@ -785,31 +785,33 @@ export default function ProductsPage() {
                         >
                           {type.name}
                         </span>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7"
-                          onClick={() => {
-                            setEditingTypeId(type.id)
-                            setEditingTypeName(type.name)
-                          }}
-                        >
-                          <Pencil className="h-3 w-3" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7"
-                          onClick={() =>
-                            handleToggleType(type.id, type.isActive)
-                          }
-                        >
-                          {type.isActive ? (
-                            <X className="h-3 w-3" />
-                          ) : (
-                            <Check className="h-3 w-3" />
-                          )}
-                        </Button>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => {
+                              setEditingTypeId(type.id)
+                              setEditingTypeName(type.name)
+                            }}
+                          >
+                            <Pencil className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() =>
+                              handleToggleType(type.id, type.isActive)
+                            }
+                          >
+                            {type.isActive ? (
+                              <X className="h-3 w-3" />
+                            ) : (
+                              <Check className="h-3 w-3" />
+                            )}
+                          </Button>
+                        </div>
                       </>
                     )}
                   </div>
