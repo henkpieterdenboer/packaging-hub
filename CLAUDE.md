@@ -184,8 +184,8 @@ Use `@/*` for all imports from `src/`.
 ## Environments
 
 - **Local dev**: `LOCAL_DB=true`, local PostgreSQL, Ethereal email
-- **Preview/Test**: `develop` branch → Vercel Preview (`col-packaging-hub-test.vercel.app`), Neon `dev` branch (`ep-still-credit-agvj8t0c`)
-- **Production**: `main` branch → Vercel Production (`col-packaging-hub.vercel.app`), Neon `main` branch (`ep-orange-river-agk5l5ep`)
+- **Preview/Test**: `develop` branch → Vercel Preview (`col-supplyhub-test.vercel.app`), Neon `dev` branch (`ep-still-credit-agvj8t0c`)
+- **Production**: `main` branch → Vercel Production (`supplyhub.apps.coloriginz.com`), Neon `main` branch (`ep-orange-river-agk5l5ep`)
 
 ### Neon Database Branching
 
