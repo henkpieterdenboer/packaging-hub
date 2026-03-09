@@ -279,7 +279,8 @@
     "deliverySaved": "Ontvangst opgeslagen voor {{orderNumber}}",
     "deliveryFailed": "Opslaan van ontvangst mislukt",
     "addPhotos": "Foto's Toevoegen",
-    "fullyReceived": "Volledig ontvangen"
+    "fullyReceived": "Volledig ontvangen",
+    "receivedUnits": "Aantal ontvangen eenheden"
   },
   "products": {
     "title": "Nieuwe Bestelling",

@@ -279,7 +279,8 @@
     "deliverySaved": "Dostawa zapisana dla {{orderNumber}}",
     "deliveryFailed": "Nie udało się zapisać dostawy",
     "addPhotos": "Dodaj Zdjęcia",
-    "fullyReceived": "Całkowicie odebrane"
+    "fullyReceived": "Całkowicie odebrane",
+    "receivedUnits": "Liczba odebranych jednostek"
   },
   "products": {
     "title": "Nowe Zamówienie",

@@ -675,96 +675,80 @@ export default function ReceivingDetailPage() {
                             className="mt-1"
                           />
 
-                          {/* Breakdown confirmation */}
+                          {/* Breakdown info */}
                           {showBreakdown && (
                             <div className="mt-2 rounded-md bg-gray-50 p-2.5 space-y-2">
-                              <p className="text-xs text-gray-500">
-                                {t('receiving.confirmBreakdownHint')}
-                              </p>
-                              <div className="flex items-center justify-between gap-2">
-                                <p className="text-sm text-gray-700">
-                                  <span className="font-medium">
-                                    {t('receiving.breakdown')}:
-                                  </span>{' '}
-                                  {expectedBoxes !== null && (
-                                    <>
-                                      {expectedBoxes} {t('labels.units.BOX').toLowerCase()}
-                                    </>
-                                  )}
-                                  {expectedBoxes !== null && expectedUnits !== null && ' = '}
-                                  {expectedUnits !== null && (
-                                    <>
-                                      {expectedUnits} {t('labels.units.PIECE').toLowerCase()}
-                                    </>
-                                  )}
-                                </p>
-
-                                {bdState === 'pending' && (
-                                  <div className="flex items-center gap-1 shrink-0">
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      className="h-8 w-8 p-0 border-green-300 text-green-600 hover:bg-green-50 hover:text-green-700"
-                                      onClick={() => confirmBreakdown(item.id)}
-                                      title={t('receiving.confirmBreakdown')}
-                                    >
-                                      <Check className="h-4 w-4" />
-                                    </Button>
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      className="h-8 w-8 p-0 border-red-300 text-red-500 hover:bg-red-50 hover:text-red-700"
-                                      onClick={() => startEditing(item.id, item, receivedQty)}
-                                      title={t('receiving.overrideBreakdown')}
-                                    >
-                                      <X className="h-4 w-4" />
-                                    </Button>
+                              {bdState !== 'editing' && (
+                                <div className="flex items-center justify-between gap-2">
+                                  <div>
+                                    <p className="text-xs text-gray-500 mb-0.5">
+                                      {t('receiving.receivedUnits')}
+                                    </p>
+                                    <p className="text-sm text-gray-700">
+                                      <span className="font-medium">
+                                        {t('receiving.breakdown')}:
+                                      </span>{' '}
+                                      {bd?.actualBoxes != null || bd?.actualUnits != null ? (
+                                        <>
+                                          {bd?.actualBoxes != null && (
+                                            <>
+                                              {bd.actualBoxes}{' '}
+                                              {t('labels.units.BOX').toLowerCase()}
+                                            </>
+                                          )}
+                                          {bd?.actualBoxes != null &&
+                                            bd?.actualUnits != null &&
+                                            ' = '}
+                                          {bd?.actualUnits != null && (
+                                            <>
+                                              {bd.actualUnits}{' '}
+                                              {t('labels.units.PIECE').toLowerCase()}
+                                            </>
+                                          )}
+                                          <span className="ml-1.5 inline-flex items-center gap-0.5 text-xs font-medium text-amber-700 bg-amber-100 rounded-full px-1.5 py-0.5">
+                                            <Pencil className="h-2.5 w-2.5" />
+                                            {t('receiving.adjusted')}
+                                          </span>
+                                        </>
+                                      ) : (
+                                        <>
+                                          {expectedBoxes !== null && (
+                                            <>
+                                              {expectedBoxes}{' '}
+                                              {t('labels.units.BOX').toLowerCase()}
+                                            </>
+                                          )}
+                                          {expectedBoxes !== null &&
+                                            expectedUnits !== null &&
+                                            ' = '}
+                                          {expectedUnits !== null && (
+                                            <>
+                                              {expectedUnits}{' '}
+                                              {t('labels.units.PIECE').toLowerCase()}
+                                            </>
+                                          )}
+                                        </>
+                                      )}
+                                    </p>
                                   </div>
-                                )}
-
-                                {bdState === 'confirmed' &&
-                                  !bd?.actualBoxes &&
-                                  !bd?.actualUnits && (
-                                    <div className="flex items-center gap-1 shrink-0">
-                                      <span className="inline-flex items-center gap-1 text-xs font-medium text-green-700 bg-green-100 rounded-full px-2 py-0.5">
-                                        <Check className="h-3 w-3" />
-                                        {t('receiving.confirmed')}
-                                      </span>
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="h-7 w-7 p-0 text-gray-400 hover:text-gray-600"
-                                        onClick={() => startEditing(item.id, item, receivedQty)}
-                                        title={t('receiving.overrideBreakdown')}
-                                      >
-                                        <Pencil className="h-3 w-3" />
-                                      </Button>
-                                    </div>
-                                  )}
-
-                                {bdState === 'confirmed' &&
-                                  (bd?.actualBoxes !== null || bd?.actualUnits !== null) && (
-                                    <div className="flex items-center gap-1 shrink-0">
-                                      <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-700 bg-amber-100 rounded-full px-2 py-0.5">
-                                        <Pencil className="h-3 w-3" />
-                                        {t('receiving.adjusted')}
-                                      </span>
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="h-7 w-7 p-0 text-gray-400 hover:text-gray-600"
-                                        onClick={() => startEditing(item.id, item, receivedQty)}
-                                        title={t('receiving.overrideBreakdown')}
-                                      >
-                                        <Pencil className="h-3 w-3" />
-                                      </Button>
-                                    </div>
-                                  )}
-                              </div>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-7 px-2 text-xs text-gray-500 hover:text-gray-700"
+                                    onClick={() => startEditing(item.id, item, receivedQty)}
+                                  >
+                                    <Pencil className="h-3 w-3 mr-1" />
+                                    {t('receiving.overrideBreakdown')}
+                                  </Button>
+                                </div>
+                              )}
 
                               {/* Override inputs */}
                               {bdState === 'editing' && (
-                                <div className="space-y-2 pt-1">
+                                <div className="space-y-2">
+                                  <p className="text-xs text-gray-500">
+                                    {t('receiving.receivedUnits')}
+                                  </p>
                                   <div className="flex items-end gap-2">
                                     {expectedBoxes !== null && (
                                       <div className="flex-1">
@@ -776,7 +760,7 @@ export default function ReceivingDetailPage() {
                                           inputMode="numeric"
                                           value={
                                             numEditing[`boxes-${item.id}`] ??
-                                            String(bd?.actualBoxes ?? 0)
+                                            String(bd?.actualBoxes ?? expectedBoxes)
                                           }
                                           onChange={(e) => {
                                             const raw = e.target.value.replace(/[^0-9]/g, '')
@@ -815,7 +799,7 @@ export default function ReceivingDetailPage() {
                                           inputMode="numeric"
                                           value={
                                             numEditing[`units-${item.id}`] ??
-                                            String(bd?.actualUnits ?? 0)
+                                            String(bd?.actualUnits ?? expectedUnits)
                                           }
                                           onChange={(e) => {
                                             const raw = e.target.value.replace(/[^0-9]/g, '')
@@ -855,26 +839,6 @@ export default function ReceivingDetailPage() {
                                   </Button>
                                 </div>
                               )}
-
-                              {bdState === 'confirmed' &&
-                                (bd?.actualBoxes !== null || bd?.actualUnits !== null) && (
-                                  <p className="text-sm font-medium text-amber-800">
-                                    {t('receiving.actual')}:{' '}
-                                    {bd?.actualBoxes !== null && (
-                                      <>
-                                        {bd.actualBoxes} {t('labels.units.BOX').toLowerCase()}
-                                      </>
-                                    )}
-                                    {bd?.actualBoxes !== null &&
-                                      bd?.actualUnits !== null &&
-                                      ' = '}
-                                    {bd?.actualUnits !== null && (
-                                      <>
-                                        {bd.actualUnits} {t('labels.units.PIECE').toLowerCase()}
-                                      </>
-                                    )}
-                                  </p>
-                                )}
                             </div>
                           )}
                         </div>

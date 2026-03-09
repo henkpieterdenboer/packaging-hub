@@ -279,7 +279,8 @@
     "deliverySaved": "Delivery saved for {{orderNumber}}",
     "deliveryFailed": "Failed to save delivery",
     "addPhotos": "Add Photos",
-    "fullyReceived": "Fully received"
+    "fullyReceived": "Fully received",
+    "receivedUnits": "Number of received units"
   },
   "products": {
     "title": "New Order",
