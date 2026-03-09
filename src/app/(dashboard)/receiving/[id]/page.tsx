@@ -703,27 +703,26 @@ export default function ReceivingDetailPage() {
               {photos.map((photo) => (
                 <div
                   key={photo.id}
-                  className="group relative rounded-lg border overflow-hidden"
+                  className="rounded-lg border overflow-hidden"
                 >
                   <img
                     src={photo.blobUrl}
                     alt={photo.fileName}
                     className="h-32 w-full object-cover"
                   />
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center">
+                  <div className="flex items-center justify-between gap-1 px-2 py-1">
+                    <p className="truncate text-xs text-gray-500">
+                      {photo.fileName}
+                    </p>
                     <Button
-                      variant="destructive"
+                      variant="ghost"
                       size="sm"
-                      className="opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="h-6 w-6 p-0 shrink-0 text-red-400 hover:text-red-600"
                       onClick={() => handleDeletePhoto(photo.id)}
                     >
                       <Trash2 className="h-3.5 w-3.5" />
-                      {t('receiving.deletePhoto')}
                     </Button>
                   </div>
-                  <p className="truncate px-2 py-1 text-xs text-gray-500">
-                    {photo.fileName}
-                  </p>
                 </div>
               ))}
             </div>
