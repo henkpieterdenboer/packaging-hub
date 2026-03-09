@@ -300,15 +300,16 @@ export default function ReceivingDetailPage() {
 
       // Upload pending photos to the new delivery
       if (pendingPhotos.length > 0) {
-        for (const file of pendingPhotos) {
+        const uploads = pendingPhotos.map((file) => {
           const fd = new FormData()
           fd.append('file', file)
           fd.append('deliveryId', delivery.id)
-          await fetch(`/api/orders/${orderId}/photos`, {
+          return fetch(`/api/orders/${orderId}/photos`, {
             method: 'POST',
             body: fd,
           })
-        }
+        })
+        await Promise.all(uploads)
         setPendingPhotos([])
       }
 
@@ -855,7 +856,8 @@ export default function ReceivingDetailPage() {
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept="image/*"
+                  accept="image/jpeg,image/png,image/webp"
+                  multiple
                   className="hidden"
                   onChange={handlePhotoSelect}
                 />
