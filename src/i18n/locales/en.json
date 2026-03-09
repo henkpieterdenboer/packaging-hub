@@ -252,6 +252,7 @@
     "allEmployees": "All Employees",
     "allSuppliers": "All Suppliers",
     "noResults": "No orders match your filters.",
+    "confirmBreakdownHint": "Confirm the number of received units",
     "confirmBreakdown": "Confirm",
     "overrideBreakdown": "Adjust",
     "confirmed": "Confirmed",

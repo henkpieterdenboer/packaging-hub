@@ -167,17 +167,40 @@ export default function CartPage() {
     return Array.from(groupMap.values())
   }, [items])
 
-  const handleQuantityChange = useCallback(
-    (productId: string, value: string, currentUnit: string) => {
-      const parsed = parseInt(value, 10)
-      if (value === '' || isNaN(parsed) || parsed < 1) {
-        // Keep at minimum 1 — let the user type freely but don't go below 1 on blur
-        updateItem(productId, value === '' ? 1 : Math.max(1, parsed || 1), currentUnit)
-      } else {
-        updateItem(productId, parsed, currentUnit)
+  // Local string state for quantity inputs so user can clear and retype
+  const [qtyEditing, setQtyEditing] = useState<Record<string, string>>({})
+
+  const handleQuantityInput = useCallback(
+    (productId: string, value: string) => {
+      const raw = value.replace(/[^0-9]/g, '')
+      setQtyEditing((prev) => ({ ...prev, [productId]: raw }))
+      const parsed = parseInt(raw, 10)
+      if (!isNaN(parsed) && parsed >= 1) {
+        // Sync valid values to cart immediately
+        const item = items.find((i) => i.productId === productId)
+        if (item) updateItem(productId, parsed, item.unit)
       }
     },
-    [updateItem],
+    [items, updateItem],
+  )
+
+  const handleQuantityBlur = useCallback(
+    (productId: string) => {
+      const raw = qtyEditing[productId]
+      if (raw === undefined) return
+      const parsed = parseInt(raw, 10)
+      const item = items.find((i) => i.productId === productId)
+      if (!item) return
+      if (isNaN(parsed) || parsed < 1) {
+        updateItem(productId, 1, item.unit)
+      }
+      setQtyEditing((prev) => {
+        const next = { ...prev }
+        delete next[productId]
+        return next
+      })
+    },
+    [qtyEditing, items, updateItem],
   )
 
   const handleUnitChange = useCallback(
@@ -428,16 +451,16 @@ export default function CartPage() {
                           </TableCell>
                           <TableCell>
                             <Input
-                              type="number"
-                              min={1}
-                              value={item.quantity}
+                              type="text"
+                              inputMode="numeric"
+                              value={qtyEditing[item.productId] ?? String(item.quantity)}
                               onChange={(e) =>
-                                handleQuantityChange(
+                                handleQuantityInput(
                                   item.productId,
                                   e.target.value,
-                                  item.unit,
                                 )
                               }
+                              onBlur={() => handleQuantityBlur(item.productId)}
                               className="w-20"
                               disabled={isAnyLoading}
                             />

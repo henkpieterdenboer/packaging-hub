@@ -81,7 +81,7 @@ export default function NewOrderPage() {
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
 
   // Per-product quantity and unit overrides (only stored when user changes from defaults)
-  const [qtyOverrides, setQtyOverrides] = useState<Record<string, number>>({})
+  const [qtyOverrides, setQtyOverrides] = useState<Record<string, string>>({})
   const [unitOverrides, setUnitOverrides] = useState<Record<string, string>>({})
 
   useEffect(() => {
@@ -141,8 +141,13 @@ export default function NewOrderPage() {
   }, [cartOpen])
 
   // Derive qty/unit for a product (override or defaults)
-  function getQty(productId: string): number {
-    return qtyOverrides[productId] ?? 1
+  function getQty(productId: string): string {
+    return qtyOverrides[productId] ?? '1'
+  }
+
+  function getQtyNum(productId: string): number {
+    const val = parseInt(qtyOverrides[productId] ?? '1', 10)
+    return isNaN(val) || val < 1 ? 1 : val
   }
 
   function getUnit(product: Product): string {
@@ -231,9 +236,8 @@ export default function NewOrderPage() {
   }
 
   function handleAddToCart(product: Product) {
-    const qty = getQty(product.id)
+    const qty = getQtyNum(product.id)
     const unit = getUnit(product)
-    if (qty < 1) return
 
     addItem({
       productId: product.id,
@@ -511,15 +515,22 @@ export default function NewOrderPage() {
                     </TableCell>
                     <TableCell>
                       <Input
-                        type="number"
-                        min={1}
+                        type="text"
+                        inputMode="numeric"
                         value={qty}
                         onChange={(e) => {
-                          const val = parseInt(e.target.value, 10)
-                          if (!isNaN(val) && val > 0) {
+                          const raw = e.target.value.replace(/[^0-9]/g, '')
+                          setQtyOverrides((prev) => ({
+                            ...prev,
+                            [product.id]: raw,
+                          }))
+                        }}
+                        onBlur={() => {
+                          const val = parseInt(qty, 10)
+                          if (isNaN(val) || val < 1) {
                             setQtyOverrides((prev) => ({
                               ...prev,
-                              [product.id]: val,
+                              [product.id]: '1',
                             }))
                           }
                         }}

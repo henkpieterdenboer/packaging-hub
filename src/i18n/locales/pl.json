@@ -252,6 +252,7 @@
     "allEmployees": "Wszyscy Pracownicy",
     "allSuppliers": "Wszyscy Dostawcy",
     "noResults": "Brak zamówień pasujących do filtrów.",
+    "confirmBreakdownHint": "Potwierdź liczbę otrzymanych jednostek",
     "confirmBreakdown": "Potwierdź",
     "overrideBreakdown": "Dostosuj",
     "confirmed": "Potwierdzone",

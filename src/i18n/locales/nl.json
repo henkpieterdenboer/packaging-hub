@@ -252,6 +252,7 @@
     "allEmployees": "Alle Medewerkers",
     "allSuppliers": "Alle Leveranciers",
     "noResults": "Geen bestellingen gevonden voor deze filters.",
+    "confirmBreakdownHint": "Bevestig het aantal ontvangen eenheden",
     "confirmBreakdown": "Bevestigen",
     "overrideBreakdown": "Aanpassen",
     "confirmed": "Bevestigd",
