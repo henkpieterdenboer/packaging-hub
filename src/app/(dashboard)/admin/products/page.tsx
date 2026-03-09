@@ -482,7 +482,7 @@ export default function ProductsPage() {
       { header: 'Boxes/Pallet', key: 'boxesPerPallet', width: 14 },
       { header: 'Price/Unit', key: 'pricePerUnit', width: 12 },
       { header: 'Remarks', key: 'remarks', width: 30 },
-      { header: 'Custom', key: 'isCustom', width: 10 },
+      { header: 'Custom Product', key: 'isCustom', width: 15 },
       { header: 'Preferred Unit', key: 'preferredOrderUnit', width: 16 },
       { header: 'Status', key: 'status', width: 10 },
     ]
@@ -595,7 +595,7 @@ export default function ProductsPage() {
       { header: 'Boxes/Pallet', key: 'boxesPerPallet', width: 14 },
       { header: 'Price/Unit', key: 'pricePerUnit', width: 12 },
       { header: 'Remarks', key: 'remarks', width: 30 },
-      { header: 'Custom', key: 'isCustom', width: 10 },
+      { header: 'Custom Product', key: 'isCustom', width: 15 },
       { header: 'Preferred Unit', key: 'preferredOrderUnit', width: 16 },
     ]
 
