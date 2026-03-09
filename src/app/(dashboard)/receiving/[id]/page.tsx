@@ -6,6 +6,7 @@ import { useRouter, useParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
@@ -177,8 +178,8 @@ export default function ReceivingDetailPage() {
   const [breakdowns, setBreakdowns] = useState<Record<string, BreakdownOverride>>({})
   const [numEditing, setNumEditing] = useState<Record<string, string>>({})
 
-  // Photos for latest delivery after save
-  const [lastDeliveryId, setLastDeliveryId] = useState<string | null>(null)
+  // Photos pending upload (selected before save)
+  const [pendingPhotos, setPendingPhotos] = useState<File[]>([])
   const [uploading, setUploading] = useState(false)
 
   // Expandable delivery history
@@ -296,7 +297,20 @@ export default function ReceivingDetailPage() {
       }
 
       const delivery = await res.json()
-      setLastDeliveryId(delivery.id)
+
+      // Upload pending photos to the new delivery
+      if (pendingPhotos.length > 0) {
+        for (const file of pendingPhotos) {
+          const fd = new FormData()
+          fd.append('file', file)
+          fd.append('deliveryId', delivery.id)
+          await fetch(`/api/orders/${orderId}/photos`, {
+            method: 'POST',
+            body: fd,
+          })
+        }
+        setPendingPhotos([])
+      }
 
       toast.success(t('receiving.deliverySaved', { orderNumber: order.orderNumber }))
 
@@ -327,35 +341,11 @@ export default function ReceivingDetailPage() {
   // Photo upload (attached to last delivery)
   // ---------------------------------------------------------------------------
 
-  async function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file || !lastDeliveryId) return
-
-    setUploading(true)
-    try {
-      const fd = new FormData()
-      fd.append('file', file)
-      fd.append('deliveryId', lastDeliveryId)
-      const res = await fetch(`/api/orders/${orderId}/photos`, {
-        method: 'POST',
-        body: fd,
-      })
-      if (!res.ok) throw new Error('Upload failed')
-      toast.success(t('receiving.photoUploaded'))
-
-      // Reload order to show updated photos in delivery history
-      const orderRes = await fetch(`/api/orders/${orderId}`)
-      if (orderRes.ok) {
-        const updatedOrder: OrderDetail = await orderRes.json()
-        setOrder(updatedOrder)
-      }
-    } catch (err) {
-      toast.error('Failed to upload photo')
-      console.error(err)
-    } finally {
-      setUploading(false)
-      e.target.value = ''
-    }
+  function handlePhotoSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = e.target.files
+    if (!files || files.length === 0) return
+    setPendingPhotos((prev) => [...prev, ...Array.from(files)])
+    e.target.value = ''
   }
 
   async function handleDeletePhoto(photoId: string) {
@@ -544,36 +534,6 @@ export default function ReceivingDetailPage() {
                           </div>
                         )}
 
-                        {/* Add photos to this delivery */}
-                        {delivery.id === lastDeliveryId && (
-                          <div>
-                            <input
-                              ref={fileInputRef}
-                              type="file"
-                              accept="image/*"
-                              className="hidden"
-                              onChange={handlePhotoUpload}
-                            />
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => fileInputRef.current?.click()}
-                              disabled={uploading}
-                            >
-                              {uploading ? (
-                                <>
-                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                  {t('receiving.uploadingPhoto')}
-                                </>
-                              ) : (
-                                <>
-                                  <Upload className="h-3.5 w-3.5" />
-                                  {t('receiving.addPhotos')}
-                                </>
-                              )}
-                            </Button>
-                          </div>
-                        )}
                       </div>
                     )}
                   </div>
@@ -879,6 +839,52 @@ export default function ReceivingDetailPage() {
                 />
               </div>
 
+              {/* Photos */}
+              <div className="space-y-3">
+                <Label className="flex items-center gap-2">
+                  <ImageIcon className="h-4 w-4" />
+                  {t('receiving.photos')}
+                </Label>
+
+                {pendingPhotos.length > 0 && (
+                  <div className="flex flex-wrap gap-3">
+                    {pendingPhotos.map((file, idx) => (
+                      <div key={idx} className="relative rounded-lg border overflow-hidden w-24 h-24">
+                        <img
+                          src={URL.createObjectURL(file)}
+                          alt={file.name}
+                          className="w-full h-full object-cover"
+                        />
+                        <button
+                          type="button"
+                          className="absolute top-1 right-1 rounded-full bg-black/60 p-1 text-white hover:bg-black/80"
+                          onClick={() => setPendingPhotos((prev) => prev.filter((_, i) => i !== idx))}
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handlePhotoSelect}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <Upload className="h-3.5 w-3.5" />
+                  {t('receiving.addPhotos')}
+                </Button>
+              </div>
+
               {/* Save button */}
               <div className="flex justify-end">
                 <Button onClick={handleSave} disabled={saving} size="lg">
@@ -900,43 +906,6 @@ export default function ReceivingDetailPage() {
         </Card>
       )}
 
-      {/* Photo upload prompt after saving */}
-      {lastDeliveryId && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <ImageIcon className="h-5 w-5" />
-              {t('receiving.photos')}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handlePhotoUpload}
-            />
-            <Button
-              variant="outline"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={uploading}
-            >
-              {uploading ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  {t('receiving.uploadingPhoto')}
-                </>
-              ) : (
-                <>
-                  <Upload className="h-4 w-4" />
-                  {t('receiving.uploadPhoto')}
-                </>
-              )}
-            </Button>
-          </CardContent>
-        </Card>
-      )}
     </div>
   )
 }
