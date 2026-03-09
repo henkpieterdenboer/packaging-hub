@@ -474,8 +474,8 @@ export default function ProductsPage() {
     const sheet = workbook.addWorksheet('Products')
 
     sheet.columns = [
-      { header: 'Name', key: 'name', width: 30 },
       { header: 'Article Code', key: 'articleCode', width: 18 },
+      { header: 'Name', key: 'name', width: 30 },
       { header: 'Supplier', key: 'supplier', width: 25 },
       { header: 'Type', key: 'type', width: 18 },
       { header: 'Units/Box', key: 'unitsPerBox', width: 12 },
@@ -587,8 +587,8 @@ export default function ProductsPage() {
     const sheet = workbook.addWorksheet('Products')
 
     sheet.columns = [
-      { header: 'Name', key: 'name', width: 30 },
       { header: 'Article Code', key: 'articleCode', width: 18 },
+      { header: 'Name', key: 'name', width: 30 },
       { header: 'Supplier', key: 'supplier', width: 25 },
       { header: 'Type', key: 'type', width: 18 },
       { header: 'Units/Box', key: 'unitsPerBox', width: 12 },
