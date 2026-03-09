@@ -327,9 +327,15 @@ export default function ReceivingDetailPage() {
   // ---------------------------------------------------------------------------
 
   function handlePhotoSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    console.log('[photo] onChange fired, files:', e.target.files?.length)
     const files = e.target.files
     if (!files || files.length === 0) return
-    setPendingPhotos((prev) => [...prev, ...Array.from(files)])
+    console.log('[photo] Adding', files.length, 'file(s)')
+    setPendingPhotos((prev) => {
+      const next = [...prev, ...Array.from(files)]
+      console.log('[photo] pendingPhotos now:', next.length)
+      return next
+    })
     e.target.value = ''
   }
 
@@ -852,17 +858,12 @@ export default function ReceivingDetailPage() {
                   </div>
                 )}
 
-                <label className="inline-flex items-center gap-2 cursor-pointer rounded-md border border-input bg-background px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground">
-                  <Upload className="h-3.5 w-3.5" />
-                  {t('receiving.addPhotos')}
-                  <input
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp"
-                    multiple
-                    className="sr-only"
-                    onChange={handlePhotoSelect}
-                  />
-                </label>
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  multiple
+                  onChange={handlePhotoSelect}
+                />
               </div>
 
               {/* Save button */}
