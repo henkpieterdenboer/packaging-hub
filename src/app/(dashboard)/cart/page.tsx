@@ -415,11 +415,8 @@ export default function CartPage() {
                       const pending = pendingOrders[item.productId]
 
                       return (
-                        <TableRow
-                          key={item.productId}
-                          className={pending ? 'border-l-4 border-l-amber-400' : ''}
-                        >
-                          <TableCell>
+                        <TableRow key={item.productId}>
+                          <TableCell className={pending ? 'border-l-4 border-l-amber-400' : ''}>
                             <div>
                               <span className="font-medium">{item.productName}</span>
                               {/* Show article code on mobile under product name */}

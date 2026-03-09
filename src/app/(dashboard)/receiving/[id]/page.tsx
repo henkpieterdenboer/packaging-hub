@@ -313,22 +313,7 @@ export default function ReceivingDetailPage() {
       }
 
       toast.success(t('receiving.deliverySaved', { orderNumber: order.orderNumber }))
-
-      // Reload order to get updated data
-      const orderRes = await fetch(`/api/orders/${orderId}`)
-      if (orderRes.ok) {
-        const updatedOrder: OrderDetail = await orderRes.json()
-        setOrder(updatedOrder)
-        // Reset form
-        const form: Record<string, FormItem> = {}
-        for (const item of updatedOrder.items) {
-          form[item.id] = { quantityReceived: 0 }
-        }
-        setFormData(form)
-        setNotes('')
-        setBreakdowns({})
-        setNumEditing({})
-      }
+      router.push('/receiving')
     } catch (err) {
       const message = err instanceof Error ? err.message : t('receiving.deliveryFailed')
       toast.error(message)
