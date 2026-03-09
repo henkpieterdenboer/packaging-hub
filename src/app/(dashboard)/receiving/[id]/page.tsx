@@ -180,6 +180,7 @@ export default function ReceivingDetailPage() {
   // Photos pending upload (selected before save)
   const [pendingPhotos, setPendingPhotos] = useState<File[]>([])
   const [uploading, setUploading] = useState(false)
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
 
   // Expandable delivery history
   const [expandedDelivery, setExpandedDelivery] = useState<string | null>(null)
@@ -502,7 +503,8 @@ export default function ReceivingDetailPage() {
                                 <img
                                   src={photo.blobUrl}
                                   alt={photo.fileName}
-                                  className="h-24 w-full object-cover"
+                                  className="h-24 w-full object-cover cursor-pointer"
+                                  onClick={() => setLightboxUrl(photo.blobUrl)}
                                 />
                                 <div className="flex items-center justify-between gap-1 px-1.5 py-0.5">
                                   <p className="truncate text-xs text-gray-500">{photo.fileName}</p>
@@ -887,6 +889,26 @@ export default function ReceivingDetailPage() {
         </Card>
       )}
 
+      {/* Photo lightbox */}
+      {lightboxUrl && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+          onClick={() => setLightboxUrl(null)}
+        >
+          <button
+            className="absolute top-4 right-4 rounded-full bg-black/60 p-2 text-white hover:bg-black/80"
+            onClick={() => setLightboxUrl(null)}
+          >
+            <X className="h-6 w-6" />
+          </button>
+          <img
+            src={lightboxUrl}
+            alt=""
+            className="max-h-[90vh] max-w-[90vw] rounded-lg object-contain"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
     </div>
   )
 }

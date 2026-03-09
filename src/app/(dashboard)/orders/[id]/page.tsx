@@ -16,7 +16,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Separator } from '@/components/ui/separator'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, X } from 'lucide-react'
 import { useTranslation } from '@/i18n/use-translation'
 import { localeMap } from '@/i18n'
 
@@ -97,6 +97,7 @@ export default function OrderDetailPage() {
   const [order, setOrder] = useState<OrderDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -397,7 +398,8 @@ export default function OrderDetailPage() {
                           key={photo.id}
                           src={photo.blobUrl}
                           alt={photo.fileName}
-                          className="h-16 w-full rounded object-cover border"
+                          className="h-16 w-full rounded object-cover border cursor-pointer"
+                          onClick={() => setLightboxUrl(photo.blobUrl)}
                         />
                       ))}
                     </div>
@@ -407,6 +409,26 @@ export default function OrderDetailPage() {
             </div>
           </CardContent>
         </Card>
+      )}
+      {/* Photo lightbox */}
+      {lightboxUrl && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+          onClick={() => setLightboxUrl(null)}
+        >
+          <button
+            className="absolute top-4 right-4 rounded-full bg-black/60 p-2 text-white hover:bg-black/80"
+            onClick={() => setLightboxUrl(null)}
+          >
+            <X className="h-6 w-6" />
+          </button>
+          <img
+            src={lightboxUrl}
+            alt=""
+            className="max-h-[90vh] max-w-[90vw] rounded-lg object-contain"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
       )}
     </div>
   )
