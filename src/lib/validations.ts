@@ -21,7 +21,7 @@ const roleValues = Object.values(Role) as [string, ...string[]]
 export const createUserSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
   firstName: z.string().min(1, 'First name is required'),
-  middleName: z.string().optional(),
+  middleName: z.string().nullable().optional(),
   lastName: z.string().min(1, 'Last name is required'),
   roles: z
     .array(z.enum(roleValues))
