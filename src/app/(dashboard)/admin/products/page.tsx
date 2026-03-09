@@ -601,24 +601,25 @@ export default function ProductsPage() {
 
     sheet.getRow(1).font = { bold: true }
 
-    // Add data validation for supplier names
-    const supplierNames = suppliers.map((s) => `"${s.name}"`).join(',')
-    const typeNames = productTypes.filter((pt) => pt.isActive).map((pt) => `"${pt.name}"`).join(',')
+    // Add data validation for supplier/type dropdowns
+    // Excel data validation list formula format: '"Item1,Item2,Item3"' (max 255 chars)
+    const supplierList = suppliers.map((s) => s.name).join(',')
+    const typeList = productTypes.filter((pt) => pt.isActive).map((pt) => pt.name).join(',')
 
     for (let i = 2; i <= 100; i++) {
-      if (supplierNames) {
+      if (supplierList && supplierList.length <= 253) {
         sheet.getCell(`C${i}`).dataValidation = {
           type: 'list',
-          formulae: [supplierNames],
+          formulae: [`"${supplierList}"`],
           showErrorMessage: true,
           errorTitle: 'Invalid Supplier',
           error: 'Please select a valid supplier',
         }
       }
-      if (typeNames) {
+      if (typeList && typeList.length <= 253) {
         sheet.getCell(`D${i}`).dataValidation = {
           type: 'list',
-          formulae: [typeNames],
+          formulae: [`"${typeList}"`],
           showErrorMessage: true,
           errorTitle: 'Invalid Type',
           error: 'Please select a valid product type',

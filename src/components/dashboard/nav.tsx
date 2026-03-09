@@ -60,12 +60,12 @@ function NavContent({ pathname, session, roles, onNavigate }: {
     <>
       {/* App title */}
       <div className="px-6 py-5">
-        <div className="flex items-center gap-2.5">
+        <Link href="/dashboard" onClick={onNavigate} className="flex items-center gap-2.5">
           <SupplyHubLogo size={28} />
           <h1 className="text-lg font-bold tracking-tight">
             {t('nav.appTitle')}
           </h1>
-        </div>
+        </Link>
       </div>
 
       {/* Main navigation */}
@@ -191,12 +191,12 @@ export default function Nav() {
 
       {/* Mobile top bar + sheet */}
       <div className="flex md:hidden items-center justify-between bg-gray-900 px-4 py-3">
-        <div className="flex items-center gap-2.5">
+        <Link href="/dashboard" className="flex items-center gap-2.5">
           <SupplyHubLogo size={24} />
           <h1 className="text-lg font-bold tracking-tight text-white">
             {t('nav.appTitle')}
           </h1>
-        </div>
+        </Link>
         <Sheet open={open} onOpenChange={handleOpenChange}>
           <SheetTrigger asChild>
             <button
