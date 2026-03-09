@@ -217,6 +217,23 @@ export const receiveGoodsSchema = z.object({
 
 export type ReceiveGoodsInput = z.infer<typeof receiveGoodsSchema>
 
+// ─── Delivery (new receiving system) ─────────────────────────────────────────
+
+export const createDeliverySchema = z.object({
+  deliveryDate: z.string().min(1, 'Delivery date is required'),
+  notes: z.string().max(1000).optional(),
+  items: z
+    .array(
+      z.object({
+        orderItemId: z.string().min(1, 'Order item ID is required'),
+        quantityReceived: z.number().int().min(0, 'Quantity must be 0 or more'),
+      }),
+    )
+    .min(1, 'At least one item is required'),
+})
+
+export type CreateDeliveryInput = z.infer<typeof createDeliverySchema>
+
 // ─── Invoice ────────────────────────────────────────────────────────────────
 
 export const matchInvoiceSchema = z.object({

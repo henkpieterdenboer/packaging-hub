@@ -56,7 +56,10 @@ Note: `@prisma/adapter-neon` is installed but **not used**. The simple `datasour
 - **Product** — items linked to suppliers and optional ProductType, optional `unitsPerBox`/`unitsPerPallet`/`pricePerUnit`, optional `pdfUrl`
 - **ProductType** — categorization for products (e.g. Boxes, Labels), managed by admins
 - **Order** — purchase orders with auto-generated `PO-XXXX` numbers, status tracking (PENDING → PARTIALLY_RECEIVED → RECEIVED)
-- **OrderItem** — line items with quantity/unit, receiving tracking (`quantityReceived`, `receivedDate`, `receivedById`)
+- **OrderItem** — line items with quantity/unit, cache fields (`quantityReceived`, `receivedDate`, `receivedById`) computed from DeliveryItems
+- **Delivery** — a single receiving session for an order, with date, notes, receivedBy
+- **DeliveryItem** — what was received per order item in a specific delivery
+- **DeliveryPhoto** — photos linked to a delivery (nullable `deliveryId`) or legacy order (nullable `orderId`)
 - **Return** — returned items with reason and location
 - **AuditLog** — action trail with `userId` (nullable), `action`, `entityType`, `entityId`
 - **EmailLog** — logs all sent emails (type, subject, to, CC, provider, ethereal URL, status)
@@ -128,14 +131,19 @@ if (!parsed.success) return NextResponse.json({ errors: parsed.error.flatten().f
 6. Email is logged to `EmailLog` table
 7. Quick order: click "Order" on any product card → pre-fills `/orders/new`
 
-### Goods Receiving Flow
+### Goods Receiving Flow (Delivery Records)
+
+Each receiving session creates a `Delivery` record with `DeliveryItem`s. This preserves full history of partial deliveries.
 
 1. Navigate to `/receiving` → shows orders with status PENDING or PARTIALLY_RECEIVED
-2. Expand an order → see items with quantity ordered vs received
-3. Enter received quantities and dates (default today, backdating allowed)
-4. Save → PATCH `/api/orders/[id]/receive` updates items in transaction
-5. Status auto-calculated: all items fully received → RECEIVED, some → PARTIALLY_RECEIVED
-6. Audit log entry created with action GOODS_RECEIVED
+2. Click an order → `/receiving/[id]` shows delivery history + new delivery form
+3. Per item: shows ordered qty, already received (from previous deliveries), and remaining
+4. Enter received quantities for this delivery + date (default today)
+5. Save → POST `/api/orders/[id]/deliveries` creates Delivery + DeliveryItems in transaction
+6. `OrderItem.quantityReceived` is updated as cache (sum of all DeliveryItems)
+7. Status auto-calculated: all items fully received → RECEIVED, some → PARTIALLY_RECEIVED
+8. After save, photo upload is available for the new delivery
+9. Delivery history is also shown on the order detail page `/orders/[id]`
 
 ### Validation Schemas
 

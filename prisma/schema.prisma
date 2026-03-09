@@ -26,6 +26,7 @@ model User {
   preferredLanguage    String   @default("en")
   orders               Order[]
   receivedItems        OrderItem[] @relation("ReceivedBy")
+  deliveriesReceived   Delivery[] @relation("DeliveriesReceived")
   reportedReturns      Return[]
   auditLogs            AuditLog[]
   emailsSent           EmailLog[] @relation("EmailsSent")
@@ -99,6 +100,7 @@ model Order {
   employee       User            @relation(fields: [employeeId], references: [id])
   supplier       Supplier        @relation(fields: [supplierId], references: [id])
   items          OrderItem[]
+  deliveries     Delivery[]
   emailLogs      EmailLog[]
   deliveryPhotos DeliveryPhoto[]
 
@@ -123,6 +125,7 @@ model OrderItem {
   order            Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product          Product  @relation(fields: [productId], references: [id])
   receivedBy       User?    @relation("ReceivedBy", fields: [receivedById], references: [id])
+  deliveryItems    DeliveryItem[]
   returns          Return[]
 
   @@index([orderId])
@@ -179,16 +182,49 @@ model EmailLog {
   @@index([sentById])
 }
 
-model DeliveryPhoto {
+model Delivery {
   id           String   @id @default(uuid())
   orderId      String
+  receivedById String
+  deliveryDate DateTime
+  notes        String?
+  createdAt    DateTime @default(now())
+
+  order      Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  receivedBy User           @relation("DeliveriesReceived", fields: [receivedById], references: [id])
+  items      DeliveryItem[]
+  photos     DeliveryPhoto[] @relation("DeliveryPhotos_Delivery")
+
+  @@index([orderId])
+}
+
+model DeliveryItem {
+  id               String   @id @default(uuid())
+  deliveryId       String
+  orderItemId      String
+  quantityReceived Int
+  createdAt        DateTime @default(now())
+
+  delivery  Delivery  @relation(fields: [deliveryId], references: [id], onDelete: Cascade)
+  orderItem OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+
+  @@index([deliveryId])
+  @@index([orderItemId])
+}
+
+model DeliveryPhoto {
+  id           String   @id @default(uuid())
+  orderId      String?
+  deliveryId   String?
   blobUrl      String
   fileName     String
   uploadedById String
   uploadedAt   DateTime @default(now())
 
-  order      Order @relation(fields: [orderId], references: [id])
-  uploadedBy User  @relation("DeliveryPhotos", fields: [uploadedById], references: [id])
+  order      Order?    @relation(fields: [orderId], references: [id])
+  delivery   Delivery? @relation("DeliveryPhotos_Delivery", fields: [deliveryId], references: [id])
+  uploadedBy User      @relation("DeliveryPhotos", fields: [uploadedById], references: [id])
 
   @@index([orderId])
+  @@index([deliveryId])
 }

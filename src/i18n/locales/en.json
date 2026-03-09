@@ -184,7 +184,13 @@
     "daysOpen": "Days open",
     "days": "days",
     "invoice": "Invoice",
-    "noInvoice": "No invoice yet"
+    "noInvoice": "No invoice yet",
+    "deliveries": "Deliveries",
+    "noDeliveries": "No deliveries recorded yet.",
+    "deliveryDate": "Date",
+    "deliveryReceivedBy": "Received by",
+    "deliveryItems": "Items received",
+    "deliveryPhotos": "Photos"
   },
   "newOrder": {
     "title": "Place New Order",
@@ -259,7 +265,21 @@
     "adjusted": "Adjusted",
     "actual": "Actual",
     "actualBoxes": "Actual boxes",
-    "actualUnits": "Actual units"
+    "actualUnits": "Actual units",
+    "deliveryHistory": "Delivery History",
+    "noDeliveries": "No deliveries recorded yet.",
+    "deliveryNumber": "Delivery #{{number}}",
+    "receivedBy": "Received by",
+    "newDelivery": "New Delivery",
+    "alreadyReceived": "Already received",
+    "remaining": "Remaining",
+    "receiveThisDelivery": "Receive this delivery",
+    "saveDelivery": "Save Delivery",
+    "savingDelivery": "Saving...",
+    "deliverySaved": "Delivery saved for {{orderNumber}}",
+    "deliveryFailed": "Failed to save delivery",
+    "addPhotos": "Add Photos",
+    "fullyReceived": "Fully received"
   },
   "products": {
     "title": "New Order",

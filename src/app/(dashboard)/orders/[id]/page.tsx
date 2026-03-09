@@ -20,6 +20,32 @@ import { ArrowLeft } from 'lucide-react'
 import { useTranslation } from '@/i18n/use-translation'
 import { localeMap } from '@/i18n'
 
+interface DeliveryItemInfo {
+  id: string
+  quantityReceived: number
+  orderItem: {
+    id: string
+    quantity: number
+    unit: string
+    product: { name: string; articleCode: string }
+  }
+}
+
+interface DeliveryPhotoInfo {
+  id: string
+  blobUrl: string
+  fileName: string
+}
+
+interface DeliveryInfo {
+  id: string
+  deliveryDate: string
+  notes: string | null
+  receivedBy: { firstName: string; lastName: string }
+  items: DeliveryItemInfo[]
+  photos: DeliveryPhotoInfo[]
+}
+
 interface OrderDetail {
   id: string
   orderNumber: string
@@ -42,6 +68,7 @@ interface OrderDetail {
       articleCode: string
     }
   }[]
+  deliveries: DeliveryInfo[]
   supplier: {
     id: string
     name: string
@@ -316,6 +343,71 @@ export default function OrderDetailPage() {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Deliveries */}
+      {order.deliveries && order.deliveries.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>{t('orderDetail.deliveries')}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {order.deliveries.map((delivery, index) => (
+                <div key={delivery.id} className="rounded-lg border p-4 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium">
+                      {t('orderDetail.deliveryDate')}:{' '}
+                      {new Date(delivery.deliveryDate).toLocaleDateString(
+                        localeMap[language] || 'en-US',
+                        { year: 'numeric', month: 'short', day: 'numeric' },
+                      )}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {t('orderDetail.deliveryReceivedBy')}: {delivery.receivedBy.firstName}{' '}
+                      {delivery.receivedBy.lastName}
+                    </p>
+                  </div>
+
+                  {/* Items in this delivery */}
+                  <div className="space-y-1">
+                    {delivery.items.map((di) => (
+                      <div key={di.id} className="flex items-baseline justify-between text-sm">
+                        <div>
+                          <span className="font-medium">{di.orderItem.product.name}</span>
+                          <span className="ml-2 text-xs text-gray-400 font-mono">
+                            {di.orderItem.product.articleCode}
+                          </span>
+                        </div>
+                        <span className="text-gray-600">
+                          {di.quantityReceived} {t(`labels.units.${di.orderItem.unit}`)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {delivery.notes && (
+                    <p className="text-sm text-gray-500 italic">{delivery.notes}</p>
+                  )}
+
+                  {/* Photos */}
+                  {delivery.photos.length > 0 && (
+                    <div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
+                      {delivery.photos.map((photo) => (
+                        <img
+                          key={photo.id}
+                          src={photo.blobUrl}
+                          alt={photo.fileName}
+                          className="h-16 w-full rounded object-cover border"
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }

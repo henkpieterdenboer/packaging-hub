@@ -184,7 +184,13 @@
     "daysOpen": "Dni otwarte",
     "days": "dni",
     "invoice": "Faktura",
-    "noInvoice": "Brak faktury"
+    "noInvoice": "Brak faktury",
+    "deliveries": "Dostawy",
+    "noDeliveries": "Brak zarejestrowanych dostaw.",
+    "deliveryDate": "Data",
+    "deliveryReceivedBy": "Odebrane przez",
+    "deliveryItems": "Odebrane pozycje",
+    "deliveryPhotos": "Zdjęcia"
   },
   "newOrder": {
     "title": "Złóż Nowe Zamówienie",
@@ -259,7 +265,21 @@
     "adjusted": "Dostosowane",
     "actual": "Rzeczywiste",
     "actualBoxes": "Rzeczywiste kartony",
-    "actualUnits": "Rzeczywiste sztuki"
+    "actualUnits": "Rzeczywiste sztuki",
+    "deliveryHistory": "Historia dostaw",
+    "noDeliveries": "Brak zarejestrowanych dostaw.",
+    "deliveryNumber": "Dostawa #{{number}}",
+    "receivedBy": "Odebrane przez",
+    "newDelivery": "Nowa Dostawa",
+    "alreadyReceived": "Już odebrano",
+    "remaining": "Pozostało",
+    "receiveThisDelivery": "Zarejestruj dostawę",
+    "saveDelivery": "Zapisz Dostawę",
+    "savingDelivery": "Zapisywanie...",
+    "deliverySaved": "Dostawa zapisana dla {{orderNumber}}",
+    "deliveryFailed": "Nie udało się zapisać dostawy",
+    "addPhotos": "Dodaj Zdjęcia",
+    "fullyReceived": "Całkowicie odebrane"
   },
   "products": {
     "title": "Nowe Zamówienie",

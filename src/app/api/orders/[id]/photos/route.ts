@@ -19,8 +19,14 @@ export async function GET(
 
     const { id } = await params
 
+    // Fetch photos linked directly to order OR via deliveries of this order
     const photos = await prisma.deliveryPhoto.findMany({
-      where: { orderId: id },
+      where: {
+        OR: [
+          { orderId: id },
+          { delivery: { orderId: id } },
+        ],
+      },
       orderBy: { uploadedAt: 'desc' },
     })
 
@@ -71,6 +77,7 @@ export async function POST(
 
     const formData = await request.formData()
     const file = formData.get('file') as File | null
+    const deliveryId = formData.get('deliveryId') as string | null
     if (!file) {
       return NextResponse.json(
         { error: 'No file provided' },
@@ -106,10 +113,11 @@ export async function POST(
       { access: 'public' },
     )
 
-    // Create DB record
+    // Create DB record — link to delivery if provided, otherwise to order
     const photo = await prisma.deliveryPhoto.create({
       data: {
-        orderId: id,
+        orderId: deliveryId ? null : id,
+        deliveryId: deliveryId || null,
         blobUrl: blob.url,
         fileName: safeName,
         uploadedById: session.user.id,

@@ -184,7 +184,13 @@
     "daysOpen": "Dagen open",
     "days": "dagen",
     "invoice": "Factuur",
-    "noInvoice": "Nog geen factuur"
+    "noInvoice": "Nog geen factuur",
+    "deliveries": "Ontvangsten",
+    "noDeliveries": "Nog geen ontvangsten geregistreerd.",
+    "deliveryDate": "Datum",
+    "deliveryReceivedBy": "Ontvangen door",
+    "deliveryItems": "Ontvangen items",
+    "deliveryPhotos": "Foto's"
   },
   "newOrder": {
     "title": "Nieuwe Bestelling Plaatsen",
@@ -259,7 +265,21 @@
     "adjusted": "Aangepast",
     "actual": "Werkelijk",
     "actualBoxes": "Werkelijke dozen",
-    "actualUnits": "Werkelijke stuks"
+    "actualUnits": "Werkelijke stuks",
+    "deliveryHistory": "Ontvangsthistorie",
+    "noDeliveries": "Nog geen ontvangsten geregistreerd.",
+    "deliveryNumber": "Ontvangst #{{number}}",
+    "receivedBy": "Ontvangen door",
+    "newDelivery": "Nieuwe Ontvangst",
+    "alreadyReceived": "Reeds ontvangen",
+    "remaining": "Resterend",
+    "receiveThisDelivery": "Registreer ontvangst",
+    "saveDelivery": "Ontvangst Opslaan",
+    "savingDelivery": "Opslaan...",
+    "deliverySaved": "Ontvangst opgeslagen voor {{orderNumber}}",
+    "deliveryFailed": "Opslaan van ontvangst mislukt",
+    "addPhotos": "Foto's Toevoegen",
+    "fullyReceived": "Volledig ontvangen"
   },
   "products": {
     "title": "Nieuwe Bestelling",

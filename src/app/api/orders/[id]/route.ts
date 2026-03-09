@@ -41,6 +41,31 @@ export async function GET(
             },
           },
         },
+        deliveries: {
+          orderBy: { deliveryDate: 'desc' },
+          include: {
+            receivedBy: {
+              select: { firstName: true, lastName: true },
+            },
+            items: {
+              include: {
+                orderItem: {
+                  select: {
+                    id: true,
+                    quantity: true,
+                    unit: true,
+                    product: {
+                      select: { name: true, articleCode: true },
+                    },
+                  },
+                },
+              },
+            },
+            photos: {
+              orderBy: { uploadedAt: 'asc' },
+            },
+          },
+        },
         supplier: {
           select: {
             id: true,
