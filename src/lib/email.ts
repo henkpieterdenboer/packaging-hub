@@ -310,15 +310,30 @@ export async function sendActivationEmail(
   const activationUrl = `${APP_URL}/activate/${encodeURIComponent(token)}`
   const safeFirstName = escapeHtml(firstName)
 
+  const buttonLabel = t('emailTemplates.activation.button')
+
   let html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <div style="text-align: center; margin-bottom: 24px;">
+        <!--[if mso]><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td align="center"><![endif]-->
+        <img src="cid:${LOGO_CID}" alt="Coloriginz" width="180" height="45" style="border: 0; outline: none;" />
+        <!--[if mso]></td></tr></table><![endif]-->
+      </div>
       <h2 style="color: #333;">${t('emailTemplates.activation.title')}</h2>
       <p>${t('emailTemplates.activation.greeting', { firstName: safeFirstName })}</p>
       <p>${t('emailTemplates.activation.intro')}</p>
       <div style="text-align: center; margin: 32px 0;">
-        <a href="${activationUrl}" style="background-color: #0070f3; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
-          ${t('emailTemplates.activation.button')}
+        <!--[if mso]>
+        <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${activationUrl}" style="height:44px;v-text-anchor:middle;width:220px;" arcsize="14%" strokecolor="#0070f3" fillcolor="#0070f3">
+          <w:anchorlock/>
+          <center style="color:#ffffff;font-family:Arial,sans-serif;font-size:14px;font-weight:bold;">${buttonLabel}</center>
+        </v:roundrect>
+        <![endif]-->
+        <!--[if !mso]><!-->
+        <a href="${activationUrl}" style="background-color: #0070f3; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
+          ${buttonLabel}
         </a>
+        <!--<![endif]-->
       </div>
       <p style="color: #666; font-size: 14px;">${t('emailTemplates.activation.linkHint')}</p>
       <p style="color: #666; font-size: 14px; word-break: break-all;">${activationUrl}</p>
@@ -341,6 +356,11 @@ export async function sendActivationEmail(
     to: actualTo,
     subject,
     html,
+    attachments: [{
+      filename: 'logo.png',
+      content: Buffer.from(LOGO_BASE64, 'base64'),
+      cid: LOGO_CID,
+    }],
   })
 
   let etherealUrl: string | undefined
@@ -387,15 +407,30 @@ export async function sendPasswordResetEmail(
   const resetUrl = `${APP_URL}/reset-password/${encodeURIComponent(token)}`
   const safeFirstName = escapeHtml(firstName)
 
+  const resetButtonLabel = t('emailTemplates.passwordReset.button')
+
   let html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <div style="text-align: center; margin-bottom: 24px;">
+        <!--[if mso]><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td align="center"><![endif]-->
+        <img src="cid:${LOGO_CID}" alt="Coloriginz" width="180" height="45" style="border: 0; outline: none;" />
+        <!--[if mso]></td></tr></table><![endif]-->
+      </div>
       <h2 style="color: #333;">${t('emailTemplates.passwordReset.title')}</h2>
       <p>${t('emailTemplates.passwordReset.greeting', { firstName: safeFirstName })}</p>
       <p>${t('emailTemplates.passwordReset.intro')}</p>
       <div style="text-align: center; margin: 32px 0;">
-        <a href="${resetUrl}" style="background-color: #0070f3; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
-          ${t('emailTemplates.passwordReset.button')}
+        <!--[if mso]>
+        <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${resetUrl}" style="height:44px;v-text-anchor:middle;width:220px;" arcsize="14%" strokecolor="#0070f3" fillcolor="#0070f3">
+          <w:anchorlock/>
+          <center style="color:#ffffff;font-family:Arial,sans-serif;font-size:14px;font-weight:bold;">${resetButtonLabel}</center>
+        </v:roundrect>
+        <![endif]-->
+        <!--[if !mso]><!-->
+        <a href="${resetUrl}" style="background-color: #0070f3; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
+          ${resetButtonLabel}
         </a>
+        <!--<![endif]-->
       </div>
       <p style="color: #666; font-size: 14px;">${t('emailTemplates.passwordReset.linkHint')}</p>
       <p style="color: #666; font-size: 14px; word-break: break-all;">${resetUrl}</p>
@@ -418,6 +453,11 @@ export async function sendPasswordResetEmail(
     to: actualTo,
     subject,
     html,
+    attachments: [{
+      filename: 'logo.png',
+      content: Buffer.from(LOGO_BASE64, 'base64'),
+      cid: LOGO_CID,
+    }],
   })
 
   let etherealUrl: string | undefined
