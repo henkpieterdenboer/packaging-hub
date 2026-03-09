@@ -116,7 +116,7 @@ export async function POST(request: Request) {
       const isCustomStr = String(row.custom || '').trim().toLowerCase()
       const isCustom = isCustomStr === 'yes' || isCustomStr === 'true' || isCustomStr === '1'
       const preferredUnit = String(row['preferred unit'] || '').trim().toUpperCase()
-      const preferredOrderUnit = preferredUnit === 'BOX' || preferredUnit === 'PALLET' ? preferredUnit : null
+      const preferredOrderUnit = preferredUnit === 'PIECE' || preferredUnit === 'BOX' || preferredUnit === 'PALLET' ? preferredUnit : null
 
       productsToCreate.push({
         name,

@@ -631,7 +631,7 @@ export default function ProductsPage() {
       }
       sheet.getCell(`J${i}`).dataValidation = {
         type: 'list',
-        formulae: ['"BOX,PALLET"'],
+        formulae: ['"PIECE,BOX,PALLET"'],
       }
     }
 
@@ -1179,22 +1179,6 @@ export default function ProductsPage() {
                   </SelectContent>
                 </Select>
               </div>
-            </div>
-
-            {/* CSRD Requirements */}
-            <div className="grid gap-2">
-              <Label htmlFor="csrdRequirements">{t('admin.products.csrdLabel')}</Label>
-              <Textarea
-                id="csrdRequirements"
-                value={form.csrdRequirements}
-                onChange={(e) =>
-                  setForm((prev) => ({
-                    ...prev,
-                    csrdRequirements: e.target.value,
-                  }))
-                }
-                rows={2}
-              />
             </div>
 
             {/* Remarks */}
