@@ -356,7 +356,10 @@ function OrdersContent() {
                       </TableCell>
                     </TableRow>
                     {isExpanded && (
-                      <TableRow className="hover:bg-transparent">
+                      <TableRow
+                        className="cursor-pointer hover:bg-gray-100/50"
+                        onClick={() => router.push(`/orders/${order.id}`)}
+                      >
                         <TableCell colSpan={6} className="bg-gray-50/50 px-6 py-2">
                           {items ? (
                             <div className="space-y-1">
