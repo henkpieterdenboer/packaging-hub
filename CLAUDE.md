@@ -49,11 +49,11 @@ npx shadcn@latest add <component>  # Add shadcn/ui component
 
 Note: `@prisma/adapter-neon` is installed but **not used**. The simple `datasourceUrl` approach works fine. `DIRECT_URL` is only needed for Prisma CLI commands (`db push`, `studio`).
 
-### Database Models (8)
+### Database Models (12)
 
-- **User** — employees with roles (ADMIN, USER), activation flow, `passwordHash` nullable for pre-activation
+- **User** — employees with roles (ADMIN, LOGISTICS, FINANCE), activation flow, `passwordHash` nullable for pre-activation
 - **Supplier** — suppliers with `ccEmails` string array and `language`
-- **Product** — items linked to suppliers and optional ProductType, optional `unitsPerBox`/`unitsPerPallet`/`pricePerUnit`, optional `pdfUrl`
+- **Product** — items linked to suppliers and optional ProductType, optional `unitsPerBox`/`boxesPerPallet`/`pricePerUnit`, optional `pdfUrl`
 - **ProductType** — categorization for products (e.g. Boxes, Labels), managed by admins
 - **Order** — purchase orders with auto-generated `PO-XXXX` numbers, status tracking (PENDING → PARTIALLY_RECEIVED → RECEIVED)
 - **OrderItem** — line items with quantity/unit, cache fields (`quantityReceived`, `receivedDate`, `receivedById`) computed from DeliveryItems
@@ -82,13 +82,16 @@ All IDs are UUIDs. Soft deletes via `isActive` flag. `OrderItem` and `Return` ca
 - `src/app/(dashboard)/` — Protected route group:
   - `/dashboard` — Stats overview with clickable cards
   - `/products` — Product catalog (grid/list view, sorting, quick order buttons)
-  - `/orders` — Order list with status filtering via URL params
+  - `/cart` — Cart page (grouped by supplier, unit conversion display, pending order warnings)
+  - `/orders` — Order list with status filtering, expandable rows, click to detail
   - `/orders/new` — New order form (supports pre-fill via `?supplierId=X&productId=Y`)
-  - `/orders/[id]` — Order detail with receiving progress
-  - `/receiving` — Goods receiving page (record received quantities per order item)
-  - `/emails` — Email log viewer with type filtering and detail dialog
+  - `/orders/[id]` — Order detail with delivery history + photo lightbox
+  - `/receiving` — Goods receiving list (PENDING/PARTIALLY_RECEIVED orders)
+  - `/receiving/[id]` — Delivery form with photo upload, delivery history
+  - `/invoices` — Invoice control page with inline invoice matching
+  - `/emails` — Email log viewer with type filtering and detail dialog (admins see all, others see own)
   - `/settings` — Profile info and password change
-  - `/admin/employees`, `/admin/suppliers`, `/admin/products` — Admin CRUD pages
+  - `/admin/employees`, `/admin/suppliers`, `/admin/products` — Admin CRUD pages (products has Excel import/export)
 - `src/app/api/` — API routes (auth, admin CRUD, orders, products, suppliers, emails)
 - `src/app/login/`, `activate/`, `forgot-password/`, `reset-password/` — Public auth pages
 
@@ -114,22 +117,21 @@ if (!parsed.success) return NextResponse.json({ errors: parsed.error.flatten().f
 ### Key Types
 
 `src/types/index.ts` — All domain enums as `const` objects (NOT Prisma enums) with corresponding label maps:
-- `Role` (ADMIN, USER) + `RoleLabels`
+- `Role` (ADMIN, LOGISTICS, FINANCE) + `RoleLabels`
 - `OrderStatus` (PENDING, PARTIALLY_RECEIVED, RECEIVED, CANCELLED) + `OrderStatusLabels`
 - `Unit` (PIECE, BOX, PALLET) + `UnitLabels`
-- `ArticleGroup` (PACKAGING, LABELS, TAPE, PALLETS, OTHER) + `ArticleGroupLabels`
+- `PreferredOrderUnit` (PIECE, BOX, PALLET) + `PreferredOrderUnitLabels`
 - `EmailType` (ORDER, ACTIVATION, PASSWORD_RESET) + `EmailTypeLabels`
 - `AuditAction` (CREATE, UPDATE, DELETE, LOGIN, ORDER_PLACED, ORDER_EMAIL_SENT, PASSWORD_RESET, ACCOUNT_ACTIVATED, GOODS_RECEIVED)
 
-### Order Flow
+### Order Flow (Cart-Based)
 
-1. Employee selects supplier → browses their products
-2. Adds items with quantities and units (PIECE, BOX, PALLET)
-3. Submits order → `prisma.$transaction()` creates order + items atomically
+1. Employee browses `/products` catalog → adds items to cart (localStorage via CartContext)
+2. Cart at `/cart` groups items by supplier, shows unit conversions and pending order warnings
+3. Submit per supplier group → `prisma.$transaction()` creates order + items atomically
 4. Auto-generates `PO-XXXX` number (`src/lib/order-utils.ts`)
 5. System emails supplier with HTML order table (CC: supplier CC emails + ordering employee)
 6. Email is logged to `EmailLog` table
-7. Quick order: click "Order" on any product card → pre-fills `/orders/new`
 
 ### Goods Receiving Flow (Delivery Records)
 
@@ -142,12 +144,14 @@ Each receiving session creates a `Delivery` record with `DeliveryItem`s. This pr
 5. Save → POST `/api/orders/[id]/deliveries` creates Delivery + DeliveryItems in transaction
 6. `OrderItem.quantityReceived` is updated as cache (sum of all DeliveryItems)
 7. Status auto-calculated: all items fully received → RECEIVED, some → PARTIALLY_RECEIVED
-8. After save, photo upload is available for the new delivery
-9. Delivery history is also shown on the order detail page `/orders/[id]`
+8. Photos can be selected as part of the delivery form (before save), uploaded after delivery is created
+9. After save, redirects back to `/receiving` with success toast
+10. Delivery history with photos is also shown on the order detail page `/orders/[id]`
+11. Photo lightbox: click any delivery photo to view full-size overlay
 
 ### Validation Schemas
 
-`src/lib/validations.ts` — Centralized Zod schemas: `loginSchema`, `createUserSchema`, `updateUserSchema`, `createSupplierSchema`, `updateSupplierSchema`, `createProductSchema`, `updateProductSchema`, `createProductTypeSchema`, `updateProductTypeSchema`, `createOrderSchema`, `activateAccountSchema`, `forgotPasswordSchema`, `resetPasswordSchema`, `changePasswordSchema`, `receiveGoodsSchema`.
+`src/lib/validations.ts` — Centralized Zod schemas: `loginSchema`, `createUserSchema`, `updateUserSchema`, `createSupplierSchema`, `updateSupplierSchema`, `createProductSchema`, `updateProductSchema`, `createProductTypeSchema`, `updateProductTypeSchema`, `createOrderSchema`, `createDeliverySchema`, `activateAccountSchema`, `forgotPasswordSchema`, `resetPasswordSchema`, `changePasswordSchema`.
 
 **Zod v4 note**: Use `.issues` not `.errors` on ZodError objects.
 
@@ -155,8 +159,9 @@ Each receiving session creates a `Delivery` record with `DeliveryItem`s. This pr
 
 `src/lib/email.ts` — Cached transporter. Ethereal for dev (logs preview URLs), Resend SMTP for production.
 - `sendOrderEmail()` — HTML formatted order table with CC support (supplier CCs + employee email). Accepts `options?: { employeeEmail, orderId, sentById }`.
-- `sendActivationEmail()` — Account activation link. Accepts optional `sentById`.
-- `sendPasswordResetEmail()` — Password reset link. Accepts optional `sentById`.
+- `sendActivationEmail()` — Account activation link with logo + VML button. Accepts optional `sentById`.
+- `sendPasswordResetEmail()` — Password reset link with logo + VML button. Accepts optional `sentById`.
+- All emails include Coloriginz logo via CID inline attachment and VML `<v:roundrect>` for Outlook-compatible buttons.
 - All functions log to `EmailLog` table after sending (wrapped in try/catch so logging failures don't break email delivery).
 
 ### Components
@@ -245,6 +250,8 @@ See `.env.example`. Key variables:
 - **Adding NOT NULL columns**: Add nullable first, backfill, then alter to NOT NULL
 - **Prisma 6**: `previewFeatures = ["driverAdapters"]` in schema (deprecated warning is expected)
 - **Next.js 16**: `middleware` deprecation warning is expected (use `proxy` in future)
+- **File input pattern**: When using `e.target.value = ''` to reset a file input, capture files with `Array.from(files)` BEFORE resetting — otherwise the FileList is cleared before React's state updater runs
+- **Daily database backup**: GitHub Actions workflow (`.github/workflows/db-backup.yml`) runs pg_dump at 03:00 UTC, stores as artifact for 90 days. Requires `PRODUCTION_DIRECT_URL` secret on the repo.
 
 ## Demo Accounts (after seeding)
 
