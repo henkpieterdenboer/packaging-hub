@@ -1016,6 +1016,7 @@ export default function ProductsPage() {
               <Label htmlFor="name">{t('admin.products.nameLabel')}</Label>
               <Input
                 id="name"
+                autoComplete="off"
                 value={form.name}
                 onChange={(e) =>
                   setForm((prev) => ({ ...prev, name: e.target.value }))
@@ -1028,6 +1029,7 @@ export default function ProductsPage() {
               <Label htmlFor="articleCode">{t('admin.products.articleCodeLabel')}</Label>
               <Input
                 id="articleCode"
+                autoComplete="off"
                 value={form.articleCode}
                 onChange={(e) =>
                   setForm((prev) => ({
@@ -1186,6 +1188,7 @@ export default function ProductsPage() {
               <Label htmlFor="remarks">{t('admin.products.remarksLabel')}</Label>
               <Textarea
                 id="remarks"
+                autoComplete="off"
                 value={form.remarks}
                 onChange={(e) =>
                   setForm((prev) => ({
